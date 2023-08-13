@@ -1,5 +1,5 @@
 variable "DEFAULT_TAG" {
-  default = "ac1dburn/ac1drut:dev"
+  default = "ac1dburn/ac1drut:latest"
 }
 
 // Special target: https://github.com/docker/metadata-action#bake-definition
