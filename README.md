@@ -339,7 +339,7 @@ docker compose up -d
 
 ## Contributing
 
-Want to contribute? Awesome! The most basic way to show your support is to star the project, or to raise issues. You
+Want to contribute to the original author? Awesome! The most basic way to show your support is to star the project, or to raise issues. You
 can also support this project by [**becoming a sponsor on GitHub**](https://github.com/sponsors/crazy-max) or by making
 a [Paypal donation](https://www.paypal.me/crazyws) to ensure this journey continues indefinitely!
 
