@@ -1,8 +1,8 @@
-<p align="center"><a href="https://github.com/crazy-max/docker-rtorrent-rutorrent" target="_blank"><img height="128" src="https://raw.githubusercontent.com/crazy-max/docker-rtorrent-rutorrent/master/.github/docker-rtorrent-rutorrent.jpg"></a></p>
+<p align="center"><a href="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed" target="_blank"><img height="128" src="https://raw.githubusercontent.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/master/.github/docker-rtorrent-rutorrent.jpg"></a></p>
 
 <p align="center">
-  <a href="https://hub.docker.com/r/crazymax/rtorrent-rutorrent/tags?page=1&ordering=last_updated"><img src="https://img.shields.io/github/v/tag/crazy-max/docker-rtorrent-rutorrent?label=version&style=flat-square" alt="Latest Version"></a>
-  <a href="https://github.com/crazy-max/docker-rtorrent-rutorrent/actions?workflow=build"><img src="https://img.shields.io/github/actions/workflow/status/crazy-max/docker-rtorrent-rutorrent/build.yml?branch=master&label=build&logo=github&style=flat-square" alt="Build Status"></a>
+  <a href="https://hub.docker.com/r/crazymax/rtorrent-rutorrent/tags?page=1&ordering=last_updated"><img src="https://img.shields.io/github/v/tag/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed?label=version&style=flat-square" alt="Latest Version"></a>
+  <a href="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/actions?workflow=build"><img src="https://img.shields.io/github/actions/workflow/status/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/build.yml?branch=master&label=build&logo=github&style=flat-square" alt="Build Status"></a>
   <a href="https://hub.docker.com/r/crazymax/rtorrent-rutorrent/"><img src="https://img.shields.io/docker/stars/crazymax/rtorrent-rutorrent.svg?style=flat-square&logo=docker" alt="Docker Stars"></a>
   <a href="https://hub.docker.com/r/crazymax/rtorrent-rutorrent/"><img src="https://img.shields.io/docker/pulls/crazymax/rtorrent-rutorrent.svg?style=flat-square&logo=docker" alt="Docker Pulls"></a>
   <br /><a href="https://github.com/sponsors/crazy-max"><img src="https://img.shields.io/badge/sponsor-crazy--max-181717.svg?logo=github&style=flat-square" alt="Become a sponsor"></a>
@@ -15,7 +15,7 @@
 Docker image.
 
 ## Credits
-This repo was built based off https://github.com/crazy-max/docker-rtorrent-rutorrent . I have modified the packages to fit my own use. All credits go to crazy-max and anyone who works with crazy-max
+This repo was built based off https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed . I have modified the packages to fit my own use. All credits go to crazy-max and anyone who works with crazy-max
 
 ___
 
@@ -64,7 +64,7 @@ ___
 ## Build locally
 
 ```shell
-git clone https://github.com/crazy-max/docker-rtorrent-rutorrent.git
+git clone https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed.git
 cd docker-rtorrent-rutorrent
 
 # Build image and output to docker (default)
@@ -80,9 +80,8 @@ docker buildx bake image-all
 ## Image
 
 | Registry                                                                                                      | Image                                   |
-|---------------------------------------------------------------------------------------------------------------|-----------------------------------------|
-| [Docker Hub](https://hub.docker.com/r/crazymax/rtorrent-rutorrent/)                                           | `crazymax/rtorrent-rutorrent`           |
-| [GitHub Container Registry](https://github.com/users/crazy-max/packages/container/package/rtorrent-rutorrent) | `ghcr.io/crazy-max/rtorrent-rutorrent`  |
+|---------------------------------------------------------------------------------------------------------------|-----------------------------------------|      
+| [GitHub Container Registry](https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/pkgs/container/rtorrent-rutorrent-cross-seed) | `ghcr.io/ac1dburnz/rtorrent-rutorrent-cross-seed`  |
 
 Following platforms for this image are available:
 
