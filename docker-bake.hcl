@@ -1,5 +1,5 @@
 variable "DEFAULT_TAG" {
-  default = "ac1dburn/ac1drut:latest"
+  default = "ghcr.io/ac1dburnz/4.2.2-0.9.8-0.13.8-r0-cross-seed"
 }
 
 // Special target: https://github.com/docker/metadata-action#bake-definition
