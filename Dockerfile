@@ -258,7 +258,7 @@ RUN apk --update --no-cache add \
   && addgroup -g ${PGID} rtorrent \
   && adduser -D -H -u ${PUID} -G rtorrent -s /bin/sh rtorrent \
   && curl --version \
-  && rm -rf /tmp/*  
+  && rm -rf /tmp/* 
 
 COPY rootfs /
 
