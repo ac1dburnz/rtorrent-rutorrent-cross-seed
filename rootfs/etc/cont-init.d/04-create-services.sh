@@ -34,3 +34,5 @@ else
 fi
 
 chmod +x /etc/services.d/rtorrent/run
+
+screen -S cross-seed -d -m cross-seed daemon

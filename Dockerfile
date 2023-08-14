@@ -258,8 +258,8 @@ RUN apk --update --no-cache add \
   && addgroup -g ${PGID} rtorrent \
   && adduser -D -H -u ${PUID} -G rtorrent -s /bin/sh rtorrent \
   && curl --version \
-  && rm -rf /tmp/*  \
-  && screen -S cross-seed -d -m cross-seed daemon
+  && rm -rf /tmp/*  
+ # && screen -S cross-seed -d -m cross-seed daemon
 
 COPY rootfs /
 
