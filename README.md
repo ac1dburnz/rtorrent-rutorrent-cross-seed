@@ -14,6 +14,8 @@
 [rTorrent](https://github.com/rakshasa/rtorrent) with [ruTorrent](https://github.com/Novik/ruTorrent)
 Docker image.
 
+## Credits
+This repo was built based off https://github.com/crazy-max/docker-rtorrent-rutorrent . I have modified the packages to fit my own use. All credits go to crazy-max and anyone who works with crazy-max
 
 ___
 
