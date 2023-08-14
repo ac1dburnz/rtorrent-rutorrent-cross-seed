@@ -54,10 +54,10 @@ encoding.add = UTF-8
 # Close torrents when diskspace is low
 schedule2 = monitor_diskspace, 15, 60, ((close_low_diskspace,1000M))
 
-# Move finished (no need Autotools/Automove plugin on ruTorrent)
-method.insert = d.get_finished_dir, simple, "cat=$cfg.download_complete=,$d.custom1="
-method.insert = d.move_to_complete, simple, "d.directory.set=$argument.1=; execute=mkdir,-p,$argument.1=; execute=mv,-u,$argument.0=,$argument.1=; d.save_full_session="
-method.set_key = event.download.finished,move_complete,"d.move_to_complete=$d.data_path=,$d.get_finished_dir="
+# Move finished (no need Autotools/Automove plugin on ruTorrent) - disabling automoving 
+#method.insert = d.get_finished_dir, simple, "cat=$cfg.download_complete=,$d.custom1="
+#method.insert = d.move_to_complete, simple, "d.directory.set=$argument.1=; execute=mkdir,-p,$argument.1=; execute=mv,-u,$argument.0=,$argument.1=; d.save_full_session="
+#method.set_key = event.download.finished,move_complete,"d.move_to_complete=$d.data_path=,$d.get_finished_dir="
 
 # cross-seed injection 
 method.set_key=event.download.finished,cross_seed,"execute={/data/rtorrent/rtorrent-cross-seed.sh,$d.name=}"
