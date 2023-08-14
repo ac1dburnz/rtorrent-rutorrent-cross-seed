@@ -16,7 +16,7 @@ on:
 
 env:
   BUILD_TAG: rtorrent-rutorrent-cross-seed:dev
-  CONTAINER_NAME: rtorrent-rutorrent-Cross-seed
+  CONTAINER_NAME: rtorrent-rutorrent-cross-seed
 
 jobs:
   test:
