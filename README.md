@@ -83,17 +83,6 @@ docker buildx bake image-all
 |---------------------------------------------------------------------------------------------------------------|-----------------------------------------|      
 | [GitHub Container Registry](https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/pkgs/container/rtorrent-rutorrent-cross-seed) | `ghcr.io/ac1dburnz/rtorrent-rutorrent-cross-seed`  |
 
-Following platforms for this image are available:
-
-```
-$ docker run --rm mplatform/mquery crazymax/rtorrent-rutorrent:latest
-Image: crazymax/rtorrent-rutorrent:latest
- * Manifest List: Yes
- * Supported platforms:
-   - linux/amd64
-   - linux/arm/v6
-   - linux/arm/v7
-   - linux/arm64
 ```
 
 ## Environment variables
