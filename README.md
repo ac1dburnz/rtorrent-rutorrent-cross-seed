@@ -9,7 +9,7 @@
   <a href="https://www.paypal.me/crazyws"><img src="https://img.shields.io/badge/donate-paypal-00457c.svg?logo=paypal&style=flat-square" alt="Donate Paypal"></a>
 </p>
 
-## About
+## About 
 
 [rTorrent](https://github.com/rakshasa/rtorrent) with [ruTorrent](https://github.com/Novik/ruTorrent)
 Docker image.
