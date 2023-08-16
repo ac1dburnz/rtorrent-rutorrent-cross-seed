@@ -258,6 +258,53 @@ properties of this file:
   * To log executed commands, add the environment variable `RT_LOG_EXECUTE`
   * To log XMLRPC queries, add the environment variable `RT_LOG_XMLRPC`
 
+
+### Truenas scale configersations
+
+**_Extra Environment Variables_**
+
+<img width="729" alt="Screenshot 2023-08-15 at 8 48 48 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/59c588d6-6887-4835-9b24-bb8c8c15a924">
+<img width="730" alt="Screenshot 2023-08-15 at 8 48 51 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/47278f2f-4f2c-40f1-bbe0-88c757f3a4ee">
+<img width="719" alt="Screenshot 2023-08-15 at 8 48 56 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/87351464-6f50-4580-b10e-1d770f9eeb1d">
+<img width="732" alt="Screenshot 2023-08-15 at 8 48 59 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/f5c4f6dc-7503-4bca-9e16-3a8187bbc28e">
+
+
+**_Storage settings_**
+
+<img width="722" alt="Screenshot 2023-08-15 at 8 50 11 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/87811c73-c01b-463b-acc7-e07d252c84f4">
+<img width="723" alt="Screenshot 2023-08-15 at 8 50 16 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/e41e17e9-36d5-4d8f-8428-ea1a7972bfba">
+<img width="717" alt="Screenshot 2023-08-15 at 8 50 21 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/d6123854-fe3b-414b-bd22-0d663c1fc7b9">
+<img width="731" alt="Screenshot 2023-08-15 at 8 50 25 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/e7d10547-a389-4c8a-a31e-1abfd328da3a">
+<img width="717" alt="Screenshot 2023-08-15 at 8 50 32 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/34655f29-03d0-4d9b-b312-ef248db0294b">
+<img width="725" alt="Screenshot 2023-08-15 at 8 50 37 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/eb445903-72ea-42ee-84ed-3028183e8b75">
+
+
+**_Port settings_**
+
+<img width="473" alt="Screenshot 2023-08-15 at 8 44 03 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/d713e87c-9585-4085-875f-08ef32c92717">
+<img width="487" alt="Screenshot 2023-08-15 at 8 44 06 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/810e7ed8-0a47-4812-936c-e710b770ed38">
+<img width="479" alt="Screenshot 2023-08-15 at 8 44 13 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/cc139dbe-2a1b-4029-8173-0c447779e90d">
+<img width="470" alt="Screenshot 2023-08-15 at 8 44 18 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/dd455b94-e3af-46f1-a5ea-ead18d87f4ea">
+<img width="492" alt="Screenshot 2023-08-15 at 8 44 27 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/bc5e350d-9206-45f4-8527-a19482fc4c6f">
+<img width="478" alt="Screenshot 2023-08-15 at 8 44 31 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/81bf78c3-c097-4433-82b7-d5b72f8127b7">
+
+NOTE: If you are using Glutun add the following extra variables to the VPN's envirment  
+
+-- You need to change this port since it is already being used
+<img width="735" alt="Screenshot 2023-08-15 at 8 51 19 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/96e475ed-d29b-4400-932d-5ad64a788dfd">
+
+-- Add any IP v4 addresses you think need to be in the route 
+<img width="760" alt="Screenshot 2023-08-15 at 8 52 32 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/7a7e57f8-8ffe-41c4-9a49-727d896a97e2">
+
+-- Add your DNS ip. This can be found in the Advance Kubernetes Settings. 
+
+<img width="745" alt="Screenshot 2023-08-15 at 8 52 43 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/829d4e72-88ea-4e16-ba87-72cabcb442e5">
+
+
+
+
+
+
 ### Override or add a ruTorrent plugin/theme
 
 You can add a plugin for ruTorrent in `/data/rutorrent/plugins/`. If you add a
