@@ -19,7 +19,7 @@ on:
       - '**.md'
 
 env:
-  DOCKERHUB_SLUG: ac1dburnz/docker-rtorrent-rutorrent-Cross-seed
+  DOCKERHUB_SLUG: ac1dburn/rtorrent-rutorrent-cross-seed
   GHCR_SLUG: ghcr.io/ac1dburnz/rtorrent-rutorrent-cross-seed
 
 jobs:
