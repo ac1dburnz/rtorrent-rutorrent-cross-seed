@@ -15,7 +15,7 @@ on:
       - '**.md'
 
 env:
-  BUILD_TAG: rtorrent-rutorrent-cross-seed:dev
+  BUILD_TAG: rtorrent-rutorrent:test
   CONTAINER_NAME: rtorrent-rutorrent-cross-seed
 
 jobs:
