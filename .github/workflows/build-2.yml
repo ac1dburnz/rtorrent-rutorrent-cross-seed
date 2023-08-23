@@ -1,4 +1,4 @@
-name: build-2
+name: build
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -39,7 +39,7 @@ jobs:
             ${{ env.DOCKERHUB_SLUG }}
             ${{ env.GHCR_SLUG }}
           tags: |
-            type=match,pattern=(.*),group=1
+            type=match,pattern=(.*)-r,group=1
             type=ref,event=pr
             type=edge
           labels: |
