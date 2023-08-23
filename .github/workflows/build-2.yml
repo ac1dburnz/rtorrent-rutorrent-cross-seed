@@ -41,7 +41,7 @@ jobs:
           tags: |
             type=match,pattern=(.*),group=1
             type=ref,event=pr
-            type=edge
+            type=latest
           labels: |
             org.opencontainers.image.title=rTorrent and ruTorrent
             org.opencontainers.image.description=rTorrent and ruTorrent
