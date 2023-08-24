@@ -55,3 +55,6 @@ log.add_output = "rpc_events","log"
 # Initialize plugins
 execute2 = {sh,-c,/usr/bin/php81 /var/www/rutorrent/php/initplugins.php rtorrent &}
 
+# adding cross-seed's injection to config file 
+method.set_key=event.download.finished,cross_seed,"execute={/data/rtorrent/rtorrent-cross-seed.sh,$d.name=}"
+
