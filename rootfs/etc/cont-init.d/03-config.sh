@@ -181,6 +181,7 @@ sed -e "s!@RT_LOG_LEVEL@!$RT_LOG_LEVEL!g" \
   -e "s!@XMLRPC_SIZE_LIMIT@!$XMLRPC_SIZE_LIMIT!g" \
   -e "s!@RT_SESSION_SAVE_SECONDS@!$RT_SESSION_SAVE_SECONDS!g" \
   /tpls/etc/rtorrent/.rtlocal.rc > /etc/rtorrent/.rtlocal.rc
+  /tpls/etc/rtorrent/rtorrent-cross-seed.sh > /etc/rtorrent/rtorrent-cross-seed.sh
 if [ "${RT_LOG_EXECUTE}" = "true" ]; then
   echo "  Enabling rTorrent execute log..."
   sed -i "s!#log\.execute.*!log\.execute = (cat,(cfg.logs),\"execute.log\")!g" /etc/rtorrent/.rtlocal.rc
@@ -195,8 +196,10 @@ echo "Checking rTorrent configuration..."
 if [ ! -f /data/rtorrent/.rtorrent.rc ]; then
   echo "  Creating default configuration..."
   cp /tpls/.rtorrent.rc /data/rtorrent/.rtorrent.rc
+  cp /tpls/etc/rtorrent/rtorrent-cross-seed.sh /data/rtorrent/rtorrent-cross-seed.sh
 fi
 chown rtorrent:rtorrent /data/rtorrent/.rtorrent.rc
+chown rtorrent:rtorrent /data/rtorrent/rtorrent-cross-seed.sh
 
 # ruTorrent config
 echo "Bootstrapping ruTorrent configuration..."
