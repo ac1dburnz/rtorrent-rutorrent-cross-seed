@@ -37,5 +37,5 @@ chmod +x /etc/services.d/rtorrent/run
 
 screen -S cross-seed -d -m cross-seed daemon
 chmod 777  /data/rtorrent/rtorrent-cross-seed.sh
-chown zfs:zfs /data/rtorrent/rtorrent-cross-seed.sh
+chown 33:33 /data/rtorrent/rtorrent-cross-seed.sh
 chmod +x /data/rtorrent/rtorrent-cross-seed.sh
