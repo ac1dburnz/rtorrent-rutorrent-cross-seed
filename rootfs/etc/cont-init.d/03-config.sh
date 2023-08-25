@@ -403,6 +403,6 @@ chmod 644 \
   /passwd/*.htpasswd \
   /etc/rtorrent/.rtlocal.rc
   
-chown zfs:zfs /data/rtorrent/rtorrent-cross-seed.sh
+chown 33:33 /data/rtorrent/rtorrent-cross-seed.sh
 chmod 777  /data/rtorrent/rtorrent-cross-seed.sh
 
