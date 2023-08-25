@@ -30,4 +30,3 @@ chown -R rtorrent:rtorrent \
   /var/run/nginx \
   /var/run/php-fpm \
   /var/run/rtorrent
-chmod 777 -R /data/rtorrent/rtorrent-cross-seed.sh
