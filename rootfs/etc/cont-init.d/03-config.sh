@@ -196,11 +196,9 @@ echo "Checking rTorrent configuration..."
 if [ ! -f /data/rtorrent/.rtorrent.rc ]; then
   echo "  Creating default configuration..."
   cp /tpls/.rtorrent.rc /data/rtorrent/.rtorrent.rc
-  cp /tpls/etc/rtorrent/rtorrent-cross-seed.sh /data/rtorrent/rtorrent-cross-seed.sh
+  cp /etc/rtorrent/rtorrent-cross-seed.sh /data/rtorrent/rtorrent-cross-seed.sh
 fi
 chown rtorrent:rtorrent /data/rtorrent/.rtorrent.rc
-chown rtorrent:rtorrent /data/rtorrent/rtorrent-cross-seed.sh
-
 # ruTorrent config
 echo "Bootstrapping ruTorrent configuration..."
 cat > /var/www/rutorrent/conf/config.php <<EOL
@@ -404,3 +402,7 @@ chmod 644 \
   /data/rtorrent/.rtorrent.rc \
   /passwd/*.htpasswd \
   /etc/rtorrent/.rtlocal.rc
+  
+chown zfs:zfs /data/rtorrent/rtorrent-cross-seed.sh
+chmod 777  /data/rtorrent/rtorrent-cross-seed.sh
+
