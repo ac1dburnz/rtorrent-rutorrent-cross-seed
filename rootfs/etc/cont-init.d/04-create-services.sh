@@ -36,4 +36,4 @@ fi
 chmod +x /etc/services.d/rtorrent/run
 
 screen -S cross-seed -d -m cross-seed daemon
-
+chmod 777  /data/rtorrent/rtorrent-cross-seed.sh
