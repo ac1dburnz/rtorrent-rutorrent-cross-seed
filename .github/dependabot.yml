@@ -1,0 +1,185 @@
+# Per https://docs.github.com/en/github/administering-a-repository/configuration-options-for-dependency-updates
+version: 2
+updates:
+
+# Alpine Linux
+
+- package-ecosystem: docker
+  directory: "17/alpine/hotspot"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 2
+  target-branch: master
+  reviewers:
+  - MarkEWaite
+  - slide
+  labels:
+  - dependencies
+  ignore:
+  # Ignore proposals to update to new major versions of Java
+  - dependency-name: "eclipse-temurin"
+    update-types: ["version-update:semver-major"]
+
+- package-ecosystem: docker
+  directory: "11/alpine/hotspot"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 2
+  target-branch: master
+  reviewers:
+  - MarkEWaite
+  - slide
+  labels:
+  - dependencies
+  ignore:
+  # Ignore proposals to update to new major versions of Java
+  - dependency-name: "eclipse-temurin"
+    update-types: ["version-update:semver-major"]
+
+# AlmaLinux
+
+- package-ecosystem: docker
+  directory: "11/almalinux/almalinux8/hotspot"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 2
+  target-branch: master
+  reviewers:
+  - saper
+  - slide
+  labels:
+  - dependencies
+  ignore:
+  # Ignore proposals to update to Alma Linux 9 or later
+  - dependency-name: "almalinux"
+    update-types: ["version-update:semver-major"]
+
+# CentOS Linux
+
+- package-ecosystem: docker
+  directory: "11/centos/centos7/hotspot"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 2
+  target-branch: master
+  reviewers:
+  - slide
+  labels:
+  - dependencies
+  ignore:
+  # Ignore proposals to update to new major versions of Java
+  - dependency-name: "eclipse-temurin"
+    update-types: ["version-update:semver-major"]
+
+# Debian Linux
+
+- package-ecosystem: docker
+  directory: "17/debian/bookworm/hotspot"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 2
+  target-branch: master
+  reviewers:
+  - MarkEWaite
+  - slide
+  labels:
+  - dependencies
+  ignore:
+  # Ignore proposals to update to new major versions of Java
+  - dependency-name: "eclipse-temurin"
+    update-types: ["version-update:semver-major"]
+
+- package-ecosystem: docker
+  directory: "17/debian/bookworm-slim/hotspot"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 2
+  target-branch: master
+  reviewers:
+  - MarkEWaite
+  - slide
+  labels:
+  - dependencies
+  ignore:
+  # Ignore proposals to update to new major versions of Java
+  - dependency-name: "eclipse-temurin"
+    update-types: ["version-update:semver-major"]
+
+- package-ecosystem: docker
+  directory: "11/debian/bookworm/hotspot"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 2
+  target-branch: master
+  reviewers:
+  - MarkEWaite
+  - slide
+  labels:
+  - dependencies
+  ignore:
+  # Ignore proposals to update to new major versions of Java
+  - dependency-name: "eclipse-temurin"
+    update-types: ["version-update:semver-major"]
+
+- package-ecosystem: docker
+  directory: "11/debian/bookworm-slim/hotspot"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 2
+  target-branch: master
+  reviewers:
+  - MarkEWaite
+  - slide
+  labels:
+  - dependencies
+  ignore:
+  # Ignore proposals to update to new major versions of Java
+  - dependency-name: "eclipse-temurin"
+    update-types: ["version-update:semver-major"]
+
+# RHEL UBI
+
+- package-ecosystem: docker
+  directory: "11/rhel/ubi8/hotspot"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 2
+  target-branch: master
+  reviewers:
+    - olivergondza
+    - slide
+  labels:
+    - dependencies
+  ignore:
+  # Ignore proposals to update to new major versions of Java
+  - dependency-name: "eclipse-temurin"
+    update-types: ["version-update:semver-major"]
+
+- package-ecosystem: docker
+  directory: "17/rhel/ubi9/hotspot"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 2
+  target-branch: master
+  reviewers:
+    - olivergondza
+    - slide
+  labels:
+    - dependencies
+  ignore:
+  # Ignore proposals to update to new major versions of Java
+  - dependency-name: "eclipse-temurin"
+    update-types: ["version-update:semver-major"]
+
+# Windows
+
+- package-ecosystem: docker
+  directory: "11/windows/windowsservercore-2019/hotspot"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 2
+  target-branch: master
+  reviewers:
+  - slide
+  labels:
+  - dependencies
