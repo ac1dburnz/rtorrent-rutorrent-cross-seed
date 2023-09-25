@@ -20,7 +20,7 @@ on:
 
 env:
   DOCKERHUB_SLUG: ac1dburn/rtorrent-rutorrent-cross-seed
-  GHCR_SLUG: ghcr.io/ac1dburnz/rtorrent-rutorrent
+  GHCR_SLUG: ghcr.io/ac1dburnz/rtorrent-rutorrent-cross-seed
 
 jobs:
   build:
@@ -45,7 +45,7 @@ jobs:
           labels: |
             org.opencontainers.image.title=rTorrent and ruTorrent
             org.opencontainers.image.description=rTorrent and ruTorrent
-            org.opencontainers.image.vendor=CrazyMax
+            org.opencontainers.image.vendor=ac1dburnz
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v3
