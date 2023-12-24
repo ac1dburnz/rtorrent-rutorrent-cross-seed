@@ -245,7 +245,6 @@ RUN apk --update --no-cache add \
     npm \
     nano \
     screen \
-  && pip3 install --upgrade pip \
   && npm install -g cross-seed \
   && pip3 install --upgrade --break-system-packages pip \
   && pip3 install --break-system-packages cfscrape cloudscraper \
