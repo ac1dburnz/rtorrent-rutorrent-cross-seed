@@ -244,7 +244,6 @@ RUN apk --update --no-cache add \
     zip \
     nano \
     screen \
-    pipx \
     nodejs \
     yarn \
   && pip3 install --upgrade --break-system-packages pip \
