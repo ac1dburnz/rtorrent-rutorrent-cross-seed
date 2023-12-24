@@ -244,8 +244,10 @@ RUN apk --update --no-cache add \
     zip \
     nano \
     screen \
+    pipx \
   && pip3 install --upgrade --break-system-packages pip \
-  && pip3 install --break-system-packages cfscrape cloudscraper npm \
+  && pip3 install --break-system-packages cfscrape cloudscraper \
+  && pipx install npm
   && npm install -g cross-seed \
   && addgroup -g ${PGID} rtorrent \
   && adduser -D -H -u ${PUID} -G rtorrent -s /bin/sh rtorrent \
