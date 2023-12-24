@@ -244,8 +244,7 @@ RUN apk --update --no-cache add \
     zip \
     npm \
     nano \
-    screen \
-    
+    screen \   
   && pip3 install --upgrade pip \
   && pip3 install  npm \
   && npm install -g cross-seed \
