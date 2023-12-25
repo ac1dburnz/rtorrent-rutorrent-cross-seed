@@ -23,6 +23,7 @@ env:
   GHCR_SLUG: ghcr.io/ac1dburnz/rtorrent-rutorrent
 
 jobs:
+  prepare:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.platforms.outputs.matrix }}
@@ -75,6 +76,7 @@ jobs:
             org.opencontainers.image.description=rTorrent and ruTorrent
             org.opencontainers.image.vendor=ac1dburnz
       -
+        name: Rename meta bake definition file
         run: |
           mv "${{ steps.meta.outputs.bake-file }}" "/tmp/bake-meta.json"
       -
