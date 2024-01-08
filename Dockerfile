@@ -96,6 +96,7 @@ RUN apk --update --no-cache add \
     php82-pear \
     tar \
     tree \
+    udns-dev \
     xz \
     zlib-dev
 
@@ -136,7 +137,9 @@ RUN tree ${DIST_PATH}
 WORKDIR /usr/local/src/libtorrent
 COPY --from=src-libtorrent /src .
 COPY /patches/libtorrent .
-RUN patch -p1 < throttle-fix-0.13.8.patch
+RUN patch -p1 < throttle-fix-0.13.8.patch \
+  && patch -p1 < libtorrent-udns-0.13.8.patch \
+  && patch -p1 < libtorrent-scanf-0.13.8.patch
 RUN ./autogen.sh
 RUN ./configure --with-posix-fallocate
 RUN make -j$(nproc) CXXFLAGS="-w -O3 -flto"
@@ -152,7 +155,10 @@ RUN patch -p1 < lockfile-fix.patch \
   && patch -p1 < scgi-fix.patch \
   && patch -p1 < session-file-fix.patch \
   && patch -p1 < xmlrpc-fix.patch \
-  && patch -p1 < xmlrpc-logic-fix.patch
+  && patch -p1 < xmlrpc-logic-fix.patch \
+  && patch -p1 < rtorrent-ml-cg-fix.patch \
+  && patch -p1 < rtorrent-ml-cui-fix.patch \
+  && patch -p1 < rtorrent-ml-dc-fix.patch
 RUN ./autogen.sh
 RUN ./configure --with-xmlrpc-c --with-ncurses
 RUN make -j$(nproc) CXXFLAGS="-w -O3 -flto"
@@ -239,6 +245,7 @@ RUN apk --update --no-cache add \
     sox \
     tar \
     tzdata \
+    udns \
     unzip \
     util-linux \
     zip \

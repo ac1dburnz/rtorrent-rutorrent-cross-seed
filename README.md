@@ -1,19 +1,23 @@
-<p align="center"><a href="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed" target="_blank"><img height="128" src="https://raw.githubusercontent.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/master/.github/docker-rtorrent-rutorrent.jpg"></a></p>
+<p align="center"><a href="https://github.com/crazy-max/docker-rtorrent-rutorrent" target="_blank"><img height="128" src="https://raw.githubusercontent.com/crazy-max/docker-rtorrent-rutorrent/master/.github/docker-rtorrent-rutorrent.jpg"></a></p>
 
 <p align="center">
-  <a href="https://hub.docker.com/r/crazymax/rtorrent-rutorrent/tags?page=1&ordering=last_updated"><img src="https://img.shields.io/github/v/tag/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed?label=version&style=flat-square" alt="Latest Version"></a>
-  <a href="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/actions?workflow=build"><img src="https://img.shields.io/github/actions/workflow/status/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/build.yml?branch=master&label=build&logo=github&style=flat-square" alt="Build Status"></a>
+  <a href="https://hub.docker.com/r/crazymax/rtorrent-rutorrent/tags?page=1&ordering=last_updated"><img src="https://img.shields.io/github/v/tag/crazy-max/docker-rtorrent-rutorrent?label=version&style=flat-square" alt="Latest Version"></a>
+  <a href="https://github.com/crazy-max/docker-rtorrent-rutorrent/actions?workflow=build"><img src="https://img.shields.io/github/actions/workflow/status/crazy-max/docker-rtorrent-rutorrent/build.yml?branch=master&label=build&logo=github&style=flat-square" alt="Build Status"></a>
+  <a href="https://hub.docker.com/r/crazymax/rtorrent-rutorrent/"><img src="https://img.shields.io/docker/stars/crazymax/rtorrent-rutorrent.svg?style=flat-square&logo=docker" alt="Docker Stars"></a>
+  <a href="https://hub.docker.com/r/crazymax/rtorrent-rutorrent/"><img src="https://img.shields.io/docker/pulls/crazymax/rtorrent-rutorrent.svg?style=flat-square&logo=docker" alt="Docker Pulls"></a>
   <br /><a href="https://github.com/sponsors/crazy-max"><img src="https://img.shields.io/badge/sponsor-crazy--max-181717.svg?logo=github&style=flat-square" alt="Become a sponsor"></a>
   <a href="https://www.paypal.me/crazyws"><img src="https://img.shields.io/badge/donate-paypal-00457c.svg?logo=paypal&style=flat-square" alt="Donate Paypal"></a>
 </p>
 
-## About 
+## About
 
 [rTorrent](https://github.com/rakshasa/rtorrent) with [ruTorrent](https://github.com/Novik/ruTorrent)
 Docker image.
 
-## Credits
-This repo was built based off https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed . I have modified the packages to fit my own use. All credits go to crazy-max and anyone who works with crazy-max
+> **Note**
+> 
+> Want to be notified of new releases? Check out 🔔 [Diun (Docker Image Update Notifier)](https://github.com/crazy-max/diun)
+> project!
 
 ___
 
@@ -38,6 +42,8 @@ ___
   * [Edit a ruTorrent plugin configuration](#edit-a-rutorrent-plugin-configuration)
   * [Increase Docker timeout to allow rTorrent to shutdown gracefully](#increase-docker-timeout-to-allow-rtorrent-to-shutdown-gracefully)
   * [WAN IP address](#wan-ip-address)
+  * [Configure rTorrent session saving](#configure-rtorrent-session-saving)
+  * [Configure rTorrent tracker scrape](#rtorrent-tracker-scrape-patch)
 * [Upgrade](#upgrade)
 * [Contributing](#contributing)
 * [License](#license)
@@ -47,8 +53,10 @@ ___
 * Run as non-root user
 * Multi-platform image
 * Latest [rTorrent](https://github.com/rakshasa/rtorrent) / [libTorrent](https://github.com/rakshasa/libtorrent) release compiled from source
+  * Includes [rTorrent patches](./patches/rtorrent) to increase software stability
+  * Includes [libtorrent patches](./patches/libtorrent) to increase software stability
 * Latest [ruTorrent](https://github.com/Novik/ruTorrent) release
-* Name resolving enhancements with [c-ares](https://github.com/rakshasa/rtorrent/wiki/Performance-Tuning#rtrorrent-with-c-ares) for asynchronous DNS requests (including name resolves)
+* Domain name resolving enhancements with [c-ares](https://github.com/rakshasa/rtorrent/wiki/Performance-Tuning#rtrorrent-with-c-ares) and [UDNS](https://www.corpit.ru/mjt/udns.html) for asynchronous DNS requests
 * Enhanced [rTorrent config](rootfs/tpls/.rtorrent.rc) and bootstraping with a [local config](rootfs/tpls/etc/rtorrent/.rtlocal.rc)
 * XMLRPC through nginx over SCGI socket (basic auth optional)
 * WebDAV on completed downloads (basic auth optional)
@@ -62,7 +70,7 @@ ___
 ## Build locally
 
 ```shell
-git clone https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed.git
+git clone https://github.com/crazy-max/docker-rtorrent-rutorrent.git
 cd docker-rtorrent-rutorrent
 
 # Build image and output to docker (default)
@@ -78,9 +86,21 @@ docker buildx bake image-all
 ## Image
 
 | Registry                                                                                                      | Image                                   |
-|---------------------------------------------------------------------------------------------------------------|-----------------------------------------|      
-| [GitHub Container Registry](https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/pkgs/container/rtorrent-rutorrent-cross-seed) | `ghcr.io/ac1dburnz/rtorrent-rutorrent-cross-seed`  |
+|---------------------------------------------------------------------------------------------------------------|-----------------------------------------|
+| [Docker Hub](https://hub.docker.com/r/crazymax/rtorrent-rutorrent/)                                           | `crazymax/rtorrent-rutorrent`           |
+| [GitHub Container Registry](https://github.com/users/crazy-max/packages/container/package/rtorrent-rutorrent) | `ghcr.io/crazy-max/rtorrent-rutorrent`  |
 
+Following platforms for this image are available:
+
+```
+$ docker run --rm mplatform/mquery crazymax/rtorrent-rutorrent:latest
+Image: crazymax/rtorrent-rutorrent:latest
+ * Manifest List: Yes
+ * Supported platforms:
+   - linux/amd64
+   - linux/arm/v6
+   - linux/arm/v7
+   - linux/arm64
 ```
 
 ## Environment variables
@@ -116,6 +136,7 @@ docker buildx bake image-all
 * `RT_LOG_EXECUTE`: Log executed commands to `/data/rtorrent/log/execute.log` (default `false`)
 * `RT_LOG_XMLRPC`: Log XMLRPC queries to `/data/rtorrent/log/xmlrpc.log` (default `false`)
 * `RT_SESSION_SAVE_SECONDS`: Seconds between writing torrent information to disk (default `3600`)
+* `RT_TRACKER_DELAY_SCRAPE`: Delay tracker announces at startup (default `true`)
 * `RT_DHT_PORT`: DHT UDP port (`dht.port.set`, default `6881`)
 * `RT_INC_PORT`: Incoming connections (`network.port_range.set`, default `50000`)
 
@@ -258,53 +279,6 @@ properties of this file:
   * To log executed commands, add the environment variable `RT_LOG_EXECUTE`
   * To log XMLRPC queries, add the environment variable `RT_LOG_XMLRPC`
 
-
-### Truenas scale configersations
-
-**_Extra Environment Variables_**
-
-<img width="729" alt="Screenshot 2023-08-15 at 8 48 48 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/59c588d6-6887-4835-9b24-bb8c8c15a924">
-<img width="730" alt="Screenshot 2023-08-15 at 8 48 51 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/47278f2f-4f2c-40f1-bbe0-88c757f3a4ee">
-<img width="719" alt="Screenshot 2023-08-15 at 8 48 56 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/87351464-6f50-4580-b10e-1d770f9eeb1d">
-<img width="732" alt="Screenshot 2023-08-15 at 8 48 59 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/f5c4f6dc-7503-4bca-9e16-3a8187bbc28e">
-
-
-**_Storage settings_**
-
-<img width="722" alt="Screenshot 2023-08-15 at 8 50 11 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/87811c73-c01b-463b-acc7-e07d252c84f4">
-<img width="723" alt="Screenshot 2023-08-15 at 8 50 16 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/e41e17e9-36d5-4d8f-8428-ea1a7972bfba">
-<img width="717" alt="Screenshot 2023-08-15 at 8 50 21 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/d6123854-fe3b-414b-bd22-0d663c1fc7b9">
-<img width="731" alt="Screenshot 2023-08-15 at 8 50 25 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/e7d10547-a389-4c8a-a31e-1abfd328da3a">
-<img width="717" alt="Screenshot 2023-08-15 at 8 50 32 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/34655f29-03d0-4d9b-b312-ef248db0294b">
-<img width="725" alt="Screenshot 2023-08-15 at 8 50 37 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/eb445903-72ea-42ee-84ed-3028183e8b75">
-
-
-**_Port settings_**
-
-<img width="473" alt="Screenshot 2023-08-15 at 8 44 03 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/d713e87c-9585-4085-875f-08ef32c92717">
-<img width="487" alt="Screenshot 2023-08-15 at 8 44 06 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/810e7ed8-0a47-4812-936c-e710b770ed38">
-<img width="479" alt="Screenshot 2023-08-15 at 8 44 13 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/cc139dbe-2a1b-4029-8173-0c447779e90d">
-<img width="470" alt="Screenshot 2023-08-15 at 8 44 18 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/dd455b94-e3af-46f1-a5ea-ead18d87f4ea">
-<img width="492" alt="Screenshot 2023-08-15 at 8 44 27 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/bc5e350d-9206-45f4-8527-a19482fc4c6f">
-<img width="478" alt="Screenshot 2023-08-15 at 8 44 31 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/81bf78c3-c097-4433-82b7-d5b72f8127b7">
-
-NOTE: If you are using Glutun add the following extra variables to the VPN's envirment  
-
--- You need to change this port since it is already being used
-<img width="735" alt="Screenshot 2023-08-15 at 8 51 19 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/96e475ed-d29b-4400-932d-5ad64a788dfd">
-
--- Add any IP v4 addresses you think need to be in the route 
-<img width="760" alt="Screenshot 2023-08-15 at 8 52 32 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/7a7e57f8-8ffe-41c4-9a49-727d896a97e2">
-
--- Add your DNS ip. This can be found in the Advance Kubernetes Settings. 
-
-<img width="745" alt="Screenshot 2023-08-15 at 8 52 43 PM" src="https://github.com/ac1dburnz/docker-rtorrent-rutorrent-Cross-seed/assets/10972668/829d4e72-88ea-4e16-ba87-72cabcb442e5">
-
-
-
-
-
-
 ### Override or add a ruTorrent plugin/theme
 
 You can add a plugin for ruTorrent in `/data/rutorrent/plugins/`. If you add a
@@ -373,6 +347,14 @@ Only torrent statistics are lost during a crash. (Ratio, Total Uploaded & Downlo
 Higher values will reduce disk usage, at the cost of minor stat loss during a crash.
 Consider increasing to 10800 seconds (3 hours) if running thousands of torrents.
 
+### rTorrent tracker scrape patch
+
+`RT_TRACKER_DELAY_SCRAPE` specifies whether to delay tracker announces at rTorrent startup.
+The default value is `true`. There are two main benefits to keeping this feature enabled:
+
+1) Software Stability: rTorrent will not crash or time-out with tens of thousands of trackers.
+2) Immediate Access: ruTorrent can be accessed immediately after rTorrent is started.
+
 ## Upgrade
 
 To upgrade, pull the newer image and launch the container:
@@ -384,9 +366,10 @@ docker compose up -d
 
 ## Contributing
 
-Want to contribute to the original author? Awesome! The most basic way to show your support is to star the project, or to raise issues. You
-can also support this project by [**becoming a sponsor on GitHub**](https://github.com/sponsors/crazy-max) or by making
-a [Paypal donation](https://www.paypal.me/crazyws) to ensure this journey continues indefinitely!
+Want to contribute? Awesome! The most basic way to show your support is to star
+the project, or to raise issues. You can also support this project by [**becoming a sponsor on GitHub**](https://github.com/sponsors/crazy-max)
+or by making a [PayPal donation](https://www.paypal.me/crazyws) to ensure this
+journey continues indefinitely!
 
 Thanks again for your support, it is much appreciated! :pray:
 
