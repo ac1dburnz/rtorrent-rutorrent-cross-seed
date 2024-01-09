@@ -249,8 +249,13 @@ RUN apk --update --no-cache add \
     unzip \
     util-linux \
     zip \
+    nano \
+    screen \
+    nodejs \
+    yarn \
   && pip3 install --upgrade --break-system-packages pip \
   && pip3 install --break-system-packages cfscrape cloudscraper \
+  && yarn global add cross-seed \
   && addgroup -g ${PGID} rtorrent \
   && adduser -D -H -u ${PUID} -G rtorrent -s /bin/sh rtorrent \
   && curl --version \
@@ -258,7 +263,7 @@ RUN apk --update --no-cache add \
 
 COPY rootfs /
 
-VOLUME [ "/data", "/downloads", "/passwd" ]
+VOLUME [ "/data", "/downloads", "/passwd","/root/.cross-seed","/torrents"]
 ENTRYPOINT [ "/init" ]
 
 HEALTHCHECK --interval=30s --timeout=20s --start-period=10s \
