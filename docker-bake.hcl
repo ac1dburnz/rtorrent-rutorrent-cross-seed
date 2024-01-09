@@ -1,5 +1,5 @@
 variable "DEFAULT_TAG" {
-  default = "rtorrent-rutorrent:local"
+  default = "ghcr.io/ac1dburnz/rtorrent-rutorrent-cross-seed"
 }
 
 // Special target: https://github.com/docker/metadata-action#bake-definition

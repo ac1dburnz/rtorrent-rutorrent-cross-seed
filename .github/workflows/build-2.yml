@@ -1,4 +1,4 @@
-name: build-3
+name: build-2
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -9,7 +9,7 @@ on:
     - cron: '0 8 */6 * *' # every 6 days to keep cache
   push:
     branches:
-      - 'DEV'
+      - 'master'
     tags:
       - '*'
     paths-ignore:
@@ -20,7 +20,7 @@ on:
 
 env:
   DOCKERHUB_SLUG: ac1dburn/rtorrent-rutorrent-cross-seed
-  GHCR_SLUG: ghcr.io/ac1dburnz/rtorrent-rutorrent
+  GHCR_SLUG: ghcr.io/ac1dburnz/rtorrent-rutorrent-cross-seed
 
 jobs:
   prepare:
