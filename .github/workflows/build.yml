@@ -1,4 +1,4 @@
-name: build-3
+name: build
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
