@@ -122,12 +122,12 @@ sed -e "s!@WEBDAV_AUTHBASIC_STRING@!$WEBDAV_AUTHBASIC_STRING!g" \
 
 # Healthcheck
 echo "Update healthcheck script..."
-cat > /usr/local/bin/healthcheck <<EOL
+cat > /usr/local/bin/healthcheck <<'EOL'
 #!/usr/bin/env sh
 set -e
 
 # rTorrent
-response_rtorrent=$(curl -s --fail -d "<?xml version='1.0'?><methodCall><methodName>system.api_version</methodName></methodCall>" http://127.0.0.1:8001)
+response_rtorrent=$(curl -s --fail -d "<?xml version='1.0'?><methodCall><methodName>system.api_version</methodName></methodCall>" http://127.0.0.1:$XMLRPC_HEALTH_PORT)
 echo "rTorrent API Response: $response_rtorrent"
 
 # Validate the response with a more flexible comparison
@@ -143,14 +143,14 @@ else
 fi
 
 # ruTorrent / PHP
-response_rutorrent=$(curl --fail http://127.0.0.1:8081/ping || echo "failed")
+response_rutorrent=$(curl --fail http://127.0.0.1:$RUTORRENT_HEALTH_PORT/ping || echo "failed")
 if [ "$response_rutorrent" != "pong" ] && [ "$response_rutorrent" != "failed" ]; then
     echo "Unexpected ruTorrent/PHP response."
     exit 1
 fi
 
 # WebDAV
-response_webdav=$(curl -s --fail http://127.0.0.1:9001)
+response_webdav=$(curl -s --fail http://127.0.0.1:$WEBDAV_HEALTH_PORT)
 echo "WebDAV Response: $response_webdav"
 
 # If the WebDAV response is as expected or matches your criteria, consider it a success
