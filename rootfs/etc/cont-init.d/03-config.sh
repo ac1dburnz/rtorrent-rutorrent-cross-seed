@@ -127,13 +127,13 @@ cat > /usr/local/bin/healthcheck <<EOL
 set -e
 
 # rTorrent
-curl --fail -d "<?xml version='1.0'?><methodCall><methodName>system.api_version</methodName></methodCall>" http://0.0.0.0:${XMLRPC_HEALTH_PORT}
+curl --fail -d "<?xml version='1.0'?><methodCall><methodName>system.api_version</methodName></methodCall>" http://127.0.0.1:${XMLRPC_HEALTH_PORT}
 
 # ruTorrent / PHP
-curl --fail http://0.0.0.0:${RUTORRENT_HEALTH_PORT}/ping
+curl --fail http://127.0.0.1:${RUTORRENT_HEALTH_PORT}/ping
 
 # WebDAV
-curl --fail http://0.0.0.0:${WEBDAV_HEALTH_PORT}
+curl --fail http://127.0.0.1:${WEBDAV_HEALTH_PORT}
 EOL
 
 # Init
@@ -203,6 +203,7 @@ if [ ! -f /data/rtorrent/.rtorrent.rc ]; then
   cp /etc/rtorrent/rtorrent-cross-seed.sh /data/rtorrent/rtorrent-cross-seed.sh
 fi
 chown rtorrent:rtorrent /data/rtorrent/.rtorrent.rc
+
 # ruTorrent config
 echo "Bootstrapping ruTorrent configuration..."
 cat > /var/www/rutorrent/conf/config.php <<EOL
@@ -263,7 +264,7 @@ cat > /var/www/rutorrent/conf/config.php <<EOL
 
 // List of local interfaces
 \$localhosts = array(
-    "0.0.0.0",
+    "127.0.0.1",
     "localhost",
 );
 
