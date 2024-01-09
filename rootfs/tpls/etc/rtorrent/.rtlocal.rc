@@ -61,3 +61,4 @@ execute2 = {sh,-c,/usr/bin/php81 /var/www/rutorrent/php/initplugins.php rtorrent
 # adding cross-seed's injection to config file 
 method.set_key=event.download.finished,cross_seed,"execute={/data/rtorrent/rtorrent-cross-seed.sh,$d.name=}"
 
+execute2 = {sh,-c,/usr/bin/php82 /var/www/rutorrent/php/initplugins.php rtorrent &}

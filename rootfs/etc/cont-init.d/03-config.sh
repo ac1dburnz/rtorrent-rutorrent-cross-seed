@@ -203,6 +203,7 @@ if [ ! -f /data/rtorrent/.rtorrent.rc ]; then
   cp /etc/rtorrent/rtorrent-cross-seed.sh /data/rtorrent/rtorrent-cross-seed.sh
 fi
 chown rtorrent:rtorrent /data/rtorrent/.rtorrent.rc
+
 # ruTorrent config
 echo "Bootstrapping ruTorrent configuration..."
 cat > /var/www/rutorrent/conf/config.php <<EOL
