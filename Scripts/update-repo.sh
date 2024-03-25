@@ -1,6 +1,6 @@
 #!/bin/bash
 
-base_dir= os.environ.get("BASE_DIR") 
+base_dir= "$github_token"
 
 # Generate a branch name with current date and time
 branch_name="branch_$(date +'%Y%m%d%H%M%S')" 
