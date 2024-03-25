@@ -1,6 +1,6 @@
 #!/bin/bash
 
-base_dir= "$github_token"
+base_dir= "$BASE_DIR"
 
 # Generate a branch name with current date and time
 branch_name="branch_$(date +'%Y%m%d%H%M%S')" 
@@ -34,15 +34,15 @@ pr_data='{
    "base": "main"  
 }'
 
-pr_response=$(curl -H "Authorization: token $GITHUB_TOKEN" -X POST -d "$pr_data" https://api.github.com/repos/$REPO/pulls)
+pr_response=$(curl -H "Authorization: token $github_token" -X POST -d "$pr_data" https://api.github.com/repos/$REPO/pulls)
 
 pr_number=$(echo $pr_response | jq '.number')
 
 # Set squash merge
-curl -H "Authorization: token $GITHUB_TOKEN" -X PATCH -d '{"merge_method":"squash"}' https://api.github.com/repos/$REPO/pulls/$pr_number
+curl -H "Authorization: token $github_token" -X PATCH -d '{"merge_method":"squash"}' https://api.github.com/repos/$REPO/pulls/$pr_number
 
 # Merge PR
-curl -H "Authorization: token $GITHUB_TOKEN" -X PUT https://api.github.com/repos/$REPO/pulls/$pr_number/merge
+curl -H "Authorization: token $github_token" -X PUT https://api.github.com/repos/$REPO/pulls/$pr_number/merge
 
 
 echo "PR merged successfully"
