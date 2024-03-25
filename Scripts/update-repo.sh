@@ -27,7 +27,7 @@ git commit -m "Automatically generated changes on $branch_name"
 git push origin "$branch_name"
 
 # Create PR
-repo="ac1dburnz/ac1ds-catalog"
+repo="ac1dburnz/rtorrent-rutorrent-cross-seed"
 title="Automatically generated changes on $branch_name"
 body="This pull request is automatically generated." 
 
