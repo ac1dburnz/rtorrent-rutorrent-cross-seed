@@ -6,7 +6,7 @@ base_dir= "$BASE_DIR"
 branch_name="branch_$(date +'%Y%m%d%H%M%S')" 
 
 # Go to directory
-cd "$base_dir/rtorrent-rutorrent-cross-seed"
+cd "$BASE_DIR/rtorrent-rutorrent-cross-seed"
 
 # Ensure on main branch before creating new one  
 git checkout main
@@ -17,7 +17,7 @@ git checkout -b "$branch_name"
 
 
 # Run catalog fix script
-python3 "$base_dir/rtorrent-rutorrent-cross-seed/Scripts/rutorrent-auto-update.py"
+python3 "$BASE_DIR/rtorrent-rutorrent-cross-seed/Scripts/rutorrent-auto-update.py"
 
 # Commit changes  
 git add --all :/
