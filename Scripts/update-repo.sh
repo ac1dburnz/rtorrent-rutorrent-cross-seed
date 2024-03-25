@@ -27,22 +27,23 @@ git commit -m "Automatically generated changes on $branch_name"
 git push origin "$branch_name"
 
 # Create PR
-pr_data='{
-   "title": "Automated update",
-   "body": "Automated PR",
-   "head": "new-branch",
-   "base": "main"  
-}'
+repo="ac1dburnz/ac1ds-catalog"
+title="Automatically generated changes on $branch_name"
+body="This pull request is automatically generated." 
 
-pr_response=$(curl -H "Authorization: token $github_token" -X POST -d "$pr_data" https://api.github.com/repos/$REPO/pulls)
+pr_response=$(curl -X POST -H "Authorization: token $github_token" \
+  -d '{"title":"'"$title"'","body":"'"$body"'","head":"'"$branch_name"'","base":"main"}' \
+  "https://api.github.com/repos/$repo/pulls")
 
 pr_number=$(echo $pr_response | jq '.number')
 
-# Set squash merge
-curl -H "Authorization: token $github_token" -X PATCH -d '{"merge_method":"squash"}' https://api.github.com/repos/$REPO/pulls/$pr_number
+# Set PR to squash merge 
+curl -X PATCH -H "Authorization: token $github_token" \
+  -d '{"merge_method":"squash"}' \
+  "https://api.github.com/repos/$repo/pulls/$pr_number"
 
 # Merge PR
-curl -H "Authorization: token $github_token" -X PUT https://api.github.com/repos/$REPO/pulls/$pr_number/merge
-
+curl -X PUT -H "Authorization: token $github_token" \
+  "https://api.github.com/repos/$repo/pulls/$pr_number/merge"
 
 echo "PR merged successfully"
