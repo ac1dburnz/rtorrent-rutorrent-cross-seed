@@ -6,7 +6,7 @@ base_dir= "$BASE_DIR"
 branch_name="branch_$(date +'%Y%m%d%H%M%S')" 
 
 # Go to directory
-cd "$base_dir/rtorrent-rutorrent-cross-seed"
+cd "$base_dir/rtorrent-rutorrent-cross-seed/Scripts"
 
 # Ensure on main branch before creating new one  
 git checkout main
