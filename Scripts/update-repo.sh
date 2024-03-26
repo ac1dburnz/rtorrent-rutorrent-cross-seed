@@ -2,7 +2,7 @@
 
 base_dir= "$BASE_DIR"
 
-# Generate a branch name with current date and time
+#  Generate a branch name with current date and time
 branch_name="branch_$(date +'%Y%m%d%H%M%S')" 
 
 # Go to directory
