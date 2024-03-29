@@ -1,0 +1,43 @@
+on: 
+  pull_request_target:
+    types: [closed]
+
+jobs:
+
+  get-latest-version:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Get latest version
+      id: get-version
+      run: |
+        tags=$(curl --silent "https://api.github.com/repos/Novik/ruTorrent/tags")
+        latest=$(echo $tags | jq -r '.[0].name')
+        echo ::set-output name=version::${latest}
+
+  construct-tag:
+    needs: get-latest-version 
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Construct Tag
+      id: construct  
+      run: |
+        tag=${{needs.get-latest-version.outputs.version}}-0.9.8-0.13.8-r0-CS
+        counter=0
+        
+        while gh release view $tag > /dev/null 2>&1; do
+          counter=$((counter + 1))
+          tag=${{needs.get-latest-version.outputs.version}}_$counter-0.9.8-0.13.8-r0-CS
+        done
+        
+        echo ::set-output name=tag::$tag
+
+  create-release:
+    needs: construct-tag
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Create Release
+      run: |
+        # Create release using ${{needs.construct-tag.outputs.tag}}
