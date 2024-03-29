@@ -1,58 +1,42 @@
-on:
+on: 
   pull_request:
-    types: [closed]
+    types: [closed]  
 
 jobs:
 
-  get-latest-version:
-    runs-on: ubuntu-latest
+  get_latest_version:
     steps:
-    - uses: actions/checkout@v2
-    - name: Get latest version
-      id: get-version
+    - name: Get Latest Version
+      id: get_version  
       run: |
         tags=$(curl --silent "https://api.github.com/repos/OWNER/REPO/tags")
-        latest=$(echo $tags | jq -r '.[0].name')
-        echo ::set-output name=version::${latest}
-        
-  construct-tag:
-    needs: get-latest-version
-    runs-on: ubuntu-latest
-    
-    steps:
-    
-    - uses: actions/checkout@v2
-    - uses: actions/setup-go@v3
-    - run: |
-        go install github.com/cli/cli/cmd/gh@latest
-        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+        latest=$(echo "$tags" | jq -r 'setpath(["0"; "name"]; .)')
+        echo ::set-output name=version::$latest
 
-    - name: Construct Tag
-      id: construct
+  construct_release_tag:
+
+    steps:
+    - name: Construct Release Tag
+      id: release_tag
       run: |
-        tag=${{needs.get-latest-version.outputs.version}}-0.9.8-0.13.8-r0-CS
+        version=${{ needs.get_latest_version.outputs.version }} 
+        suffix="-0.9.8-0.13.8-r0-CS"
+        
+        tag=$version$suffix
         counter=0
         
-        while gh release view $tag > /dev/null 2>&1; do
+        while gh release view $tag > /dev/null; do
           counter=$((counter + 1))
-          tag=${{needs.get-latest-version.outputs.version}}_$counter-0.9.8-0.13.8-r0-CS
+          tag=$version"_"$counter$suffix
         done
         
         echo ::set-output name=tag::$tag
         
-  create-release:
-  
-    needs: construct-tag
-    runs-on: ubuntu-latest
-    
-    steps:
-    
-    - uses: actions/checkout@v2
-    - uses: actions/setup-go@v3
-    - run: |
-        go install github.com/cli/cli/cmd/gh@latest
-        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+  create_release:
 
+    steps:
     - name: Create Release
-      run: |
-        gh release create ${{needs.construct-tag.outputs.tag}} --title "Release ${{needs.construct-tag.outputs.tag}}"
+      env:
+        TAG: ${{ needs.construct_release_tag.outputs.tag }}
+      run: |  
+        gh release create $TAG
