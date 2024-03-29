@@ -7,7 +7,7 @@ jobs:
   get-latest-version:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Get latest version
       id: get-version
       run: |
@@ -19,7 +19,7 @@ jobs:
     needs: get-latest-version 
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Construct Tag
       id: construct  
       run: |
@@ -37,7 +37,7 @@ jobs:
     needs: construct-tag
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Create Release
       run: |
         # Create release using ${{needs.construct-tag.outputs.tag}}
