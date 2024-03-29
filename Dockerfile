@@ -199,7 +199,7 @@ ENV PYTHONPATH="$PYTHONPATH:/var/www/rutorrent" \
   PUID="1000" \
   PGID="1000"
 
-# increase rmem_max and wmem_max for rTorrent configuration
+# increase rmem_max and wmem_max for rTorrent configuration - 
 RUN echo "net.core.rmem_max = 67108864" >> /etc/sysctl.conf \
   && echo "net.core.wmem_max = 67108864" >> /etc/sysctl.conf \
   && sysctl -p
