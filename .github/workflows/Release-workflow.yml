@@ -1,13 +1,17 @@
-on: 
+on:
   pull_request:
-    types: [closed]  
+    types: [closed]
 
 jobs:
 
   get_latest_version:
+
+    runs-on: ubuntu-latest
+
     steps:
+    - uses: actions/checkout@v2
     - name: Get Latest Version
-      id: get_version  
+      id: get_version
       run: |
         tags=$(curl --silent "https://api.github.com/repos/OWNER/REPO/tags")
         latest=$(echo "$tags" | jq -r 'setpath(["0"; "name"]; .)')
@@ -15,28 +19,29 @@ jobs:
 
   construct_release_tag:
 
+    runs-on: ubuntu-latest
+
     steps:
     - name: Construct Release Tag
       id: release_tag
       run: |
-        version=${{ needs.get_latest_version.outputs.version }} 
+        version=${{ needs.get_latest_version.outputs.version }}
         suffix="-0.9.8-0.13.8-r0-CS"
-        
         tag=$version$suffix
         counter=0
-        
         while gh release view $tag > /dev/null; do
           counter=$((counter + 1))
           tag=$version"_"$counter$suffix
         done
-        
         echo ::set-output name=tag::$tag
-        
+
   create_release:
+
+    runs-on: ubuntu-latest
 
     steps:
     - name: Create Release
       env:
         TAG: ${{ needs.construct_release_tag.outputs.tag }}
-      run: |  
+      run: |
         gh release create $TAG
