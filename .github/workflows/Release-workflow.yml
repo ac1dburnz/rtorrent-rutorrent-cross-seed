@@ -1,5 +1,5 @@
-on: 
-  pull_request_target:
+on:
+  pull_request:
     types: [closed]
 
 jobs:
@@ -7,21 +7,28 @@ jobs:
   get-latest-version:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v2
     - name: Get latest version
       id: get-version
       run: |
-        tags=$(curl --silent "https://api.github.com/repos/Novik/ruTorrent/tags")
+        tags=$(curl --silent "https://api.github.com/repos/OWNER/REPO/tags")
         latest=$(echo $tags | jq -r '.[0].name')
         echo ::set-output name=version::${latest}
-
+        
   construct-tag:
-    needs: get-latest-version 
+    needs: get-latest-version
     runs-on: ubuntu-latest
+    
     steps:
-    - uses: actions/checkout@v4
+    
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v3
+    - run: |
+        go install github.com/cli/cli/cmd/gh@latest
+        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
     - name: Construct Tag
-      id: construct  
+      id: construct
       run: |
         tag=${{needs.get-latest-version.outputs.version}}-0.9.8-0.13.8-r0-CS
         counter=0
@@ -32,12 +39,20 @@ jobs:
         done
         
         echo ::set-output name=tag::$tag
-
+        
   create-release:
+  
     needs: construct-tag
     runs-on: ubuntu-latest
+    
     steps:
-    - uses: actions/checkout@v4
+    
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v3
+    - run: |
+        go install github.com/cli/cli/cmd/gh@latest
+        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
     - name: Create Release
       run: |
-        # Create release using ${{needs.construct-tag.outputs.tag}}
+        gh release create ${{needs.construct-tag.outputs.tag}} --title "Release ${{needs.construct-tag.outputs.tag}}"
