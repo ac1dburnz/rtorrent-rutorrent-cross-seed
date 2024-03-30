@@ -1,4 +1,4 @@
-# Novik/ruTorrent 4.3.0
+# syntax=docker/dockerfile:1
 
 ARG LIBSIG_VERSION=3.0.3
 ARG CARES_VERSION=1.24.0
@@ -9,8 +9,8 @@ ARG RTORRENT_VERSION=v0.9.8
 ARG MKTORRENT_VERSION=v1.1
 ARG GEOIP2_PHPEXT_VERSION=1.3.1
 
-# Novik/ruTorrent 4.3.0
-ARG RUTORRENT_VERSION=4e47301f36d04d219b76c71ed4fd8d37e8b62e4f
+# Novik/ruTorrent 4.2.11
+ARG RUTORRENT_VERSION=c2ad2a286e536ae3e78281a1a5c836adf65791e2
 ARG GEOIP2_RUTORRENT_VERSION=4ff2bde530bb8eef13af84e4413cedea97eda148
 
 ARG ALPINE_VERSION=3.19
@@ -199,12 +199,12 @@ ENV PYTHONPATH="$PYTHONPATH:/var/www/rutorrent" \
   PUID="1000" \
   PGID="1000"
 
-# Novik/ruTorrent 4.3.0
+# increase rmem_max and wmem_max for rTorrent configuration - 
 RUN echo "net.core.rmem_max = 67108864" >> /etc/sysctl.conf \
   && echo "net.core.wmem_max = 67108864" >> /etc/sysctl.conf \
   && sysctl -p
 
-# Novik/ruTorrent 4.3.0
+# unrar package is not available since alpine 3.15 
 RUN echo "@314 http://dl-cdn.alpinelinux.org/alpine/v3.14/main" >> /etc/apk/repositories \
   && apk --update --no-cache add unrar@314
 
