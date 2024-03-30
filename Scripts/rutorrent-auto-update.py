@@ -1,21 +1,22 @@
 import os
-import re 
+import re
 import requests
 
-print("Fetching latest release...")
-
+print("Fetching latest commit SHA for repo")
 repo = "Novik/ruTorrent"
-releases_url = f"https://api.github.com/repos/{repo}/releases"
 
-response = requests.get(releases_url)
-latest_release = response.json()[0]
+response = requests.get(f"https://api.github.com/repos/{repo}/commits")
+commits = response.json()
+latest_commit = commits[0]
+latest_sha = latest_commit["sha"]  
 
-tag_name = latest_release["tag_name"]
-version = re.search(r'v(\d+\.\d+\.\d+)', tag_name).group(1)
+# Extract version
+version = re.search(r'v(\d+\.\d+\.\d+)', latest_commit['commit']['message']).group(1)
 
 print(f"Latest version: {version}")
+print(f"Latest commit SHA: {latest_sha}")
 
-# Rest of script to update Dockerfile...
+print("Updating Dockerfile with latest version and commit SHA")
 
 base_dir = os.environ.get("BASE_DIR")
 dockerfile_path = os.path.join(base_dir, "rtorrent-rutorrent-cross-seed", "Dockerfile")
@@ -26,11 +27,13 @@ with open(dockerfile_path, "r") as f:
 for i, line in enumerate(lines):
   if line.startswith("#") and repo in line:
     lines[i] = f'# {repo} {version}\n'
-
-  if line.startswith("ARG RUTORRENT_VERSION="): 
-    lines[i] = f'ARG RUTORRENT_VERSION={version}\n'
+    print(f"Updated comment: {lines[i]}")
+    
+  if line.startswith("ARG RUTORRENT_VERSION="):
+    lines[i] = f'ARG RUTORRENT_VERSION={latest_sha}\n'
+    print(f"Updated line: {lines[i]}")
     
 with open(dockerfile_path, "w") as f:
   f.writelines(lines)
-
+  
 print("Dockerfile updated")
