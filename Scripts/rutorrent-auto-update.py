@@ -1,39 +1,59 @@
+import requests
 import os
 import re
-import requests
 
-print("Fetching latest commit SHA for repo")
-repo = "Novik/ruTorrent"
+# Get latest version and commit
 
-response = requests.get(f"https://api.github.com/repos/{repo}/commits")
-commits = response.json()
-latest_commit = commits[0]
-latest_sha = latest_commit["sha"]  
+repo = "Novik/ruTorrent"  
 
-# Extract version
-version = re.search(r'v(\d+\.\d+\.\d+)', latest_commit['commit']['message']).group(1)
+releases_url = f"https://api.github.com/repos/{repo}/releases"
+commits_url = f"https://api.github.com/repos/{repo}/commits"
 
-print(f"Latest version: {version}")
-print(f"Latest commit SHA: {latest_sha}")
+release_response = requests.get(releases_url)
+latest_release = release_response.json()[0]
 
-print("Updating Dockerfile with latest version and commit SHA")
+tag_name = latest_release["tag_name"]
+version = re.search(r'v(\d+\.\d+\.\d+)', tag_name).group(1)
+
+commit_response = requests.get(commits_url)
+latest_commit = commit_response.json()[0]  
+sha = latest_commit["sha"]
+
+print(f"Latest version: {version}") 
+print(f"Latest SHA: {sha}")
+
+# Update Dockerfile
 
 base_dir = os.environ.get("BASE_DIR")
 dockerfile_path = os.path.join(base_dir, "rtorrent-rutorrent-cross-seed", "Dockerfile")
 
 with open(dockerfile_path, "r") as f:
+
   lines = f.readlines()
 
-for i, line in enumerate(lines):
-  if line.startswith("#") and repo in line:
-    lines[i] = f'# {repo} {version}\n'
-    print(f"Updated comment: {lines[i]}")
-    
-  if line.startswith("ARG RUTORRENT_VERSION="):
-    lines[i] = f'ARG RUTORRENT_VERSION={latest_sha}\n'
-    print(f"Updated line: {lines[i]}")
-    
-with open(dockerfile_path, "w") as f:
-  f.writelines(lines)
+  print(lines) # Print lines for debugging
   
+  rutorrent_line = None
+  arg_line = None
+
+  for i, line in enumerate(lines):
+
+    if "Novik/ruTorrent" in line.lower():
+      print("Found repo line!")  
+      rutorrent_line = i
+
+    if line.startswith("ARG RUTORRENT_VERSION="):
+      arg_line = i
+
+  if rutorrent_line is None:
+    print("Did not find repo line")
+  else:  
+    lines[rutorrent_line] = f'# Novik/ruTorrent {version}\n'
+
+  if arg_line is not None:
+    lines[arg_line] = f'ARG RUTORRENT_VERSION={sha}\n'
+
+  with open(dockerfile_path, "w") as f:
+    f.writelines(lines)
+    
 print("Dockerfile updated")
