@@ -38,7 +38,7 @@ with open(dockerfile_path, "r") as f:
 
   for i, line in enumerate(lines):
 
-    if "Novik/ruTorrent" in line.lower():
+    if "# Novik/ruTorrent" in line.lower():
       print("Found repo line!")  
       rutorrent_line = i
 
