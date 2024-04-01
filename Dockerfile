@@ -245,6 +245,9 @@ RUN apk --update --no-cache add \
     php82-sockets \
     php82-xml \
     php82-zip \
+    php-mbstring \
+    php-dom \
+    php-libxml \
     python3 \
     py3-pip \
     shadow \
