@@ -183,6 +183,9 @@ sed -e "s!@RT_LOG_LEVEL@!$RT_LOG_LEVEL!g" \
   -e "s!@RT_INC_PORT@!$RT_INC_PORT!g" \
   -e "s!@XMLRPC_SIZE_LIMIT@!$XMLRPC_SIZE_LIMIT!g" \
   -e "s!@RT_SESSION_SAVE_SECONDS@!$RT_SESSION_SAVE_SECONDS!g" \
+  -e "s!@RT_TRACKER_DELAY_SCRAPE@!$RT_TRACKER_DELAY_SCRAPE!g" \
+  -e "s!@RT_SEND_BUFFER_SIZE@!$RT_SEND_BUFFER_SIZE!g" \
+  -e "s!@RT_RECEIVE_BUFFER_SIZE@!$RT_RECEIVE_BUFFER_SIZE!g" \
   /tpls/etc/rtorrent/.rtlocal.rc > /etc/rtorrent/.rtlocal.rc
   chmod +X /tpls/etc/rtorrent/rtorrent-cross-seed.sh
   chmod 777 /tpls/etc/rtorrent/rtorrent-cross-seed.sh
@@ -205,6 +208,7 @@ if [ ! -f /data/rtorrent/.rtorrent.rc ]; then
   cp /etc/rtorrent/rtorrent-cross-seed.sh /data/rtorrent/rtorrent-cross-seed.sh
 fi
 chown rtorrent:rtorrent /data/rtorrent/.rtorrent.rc
+
 # ruTorrent config
 echo "Bootstrapping ruTorrent configuration..."
 cat > /var/www/rutorrent/conf/config.php <<EOL
@@ -321,6 +325,7 @@ if [ -d "/var/www/rutorrent/plugins/create" ]; then
 \$useExternal = 'mktorrent';
 \$pathToCreatetorrent = '/usr/local/bin/mktorrent';
 \$recentTrackersMaxCount = 15;
+\$useInternalHybrid = true;
 EOL
   chown nobody:nogroup "/var/www/rutorrent/plugins/create/conf.php"
 else
