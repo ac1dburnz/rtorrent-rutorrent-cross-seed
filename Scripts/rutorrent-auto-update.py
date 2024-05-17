@@ -11,7 +11,7 @@ release_response = requests.get(releases_url)
 latest_release = release_response.json()[0]
 
 tag_name = latest_release["tag_name"] 
-version = re.search(r'v(\d+\.\d+\.\d+)', tag_name).group(1)
+version = re.search(r'v(\d+\.\d+(\.\d+)?)', tag_name).group(1)
 
 commit_response = requests.get(commits_url)
 latest_commit = commit_response.json()[0]
