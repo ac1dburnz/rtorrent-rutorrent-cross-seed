@@ -6,28 +6,22 @@ repo = "stickz/rtorrent"
 
 try:
     # Get the latest release information
-    releases_url = f"https://api.github.com/repos/{repo}/releases/latest"
-    release_response = requests.get(releases_url)
-    release_response.raise_for_status()  # Raise an error for bad status codes
-    latest_release = release_response.json()
+    tags_url = f"https://api.github.com/repos/{repo}/git/refs/tags"
+    tags_response = requests.get(tags_url)
+    tags_response.raise_for_status()  # Raise an error for bad status codes
+    tags_data = tags_response.json()
 
-    # Extract the tag name and version number
-    tag_name = latest_release["tag_name"]
-    print(f"Fetched tag name: {tag_name}")  # Debugging output
+    # Extract the latest tag and its associated SHA
+    latest_tag_data = tags_data[0]
+    latest_tag_name = latest_tag_data["ref"].split("/")[-1]  # Extract the tag name from the full ref
+    latest_sha = latest_tag_data["object"]["sha"]
 
-    # Use a regular expression to extract the version number from the tag name
-    match = re.search(r'v(\d+)', tag_name, re.IGNORECASE)
+    # Extract the version number from the tag name
+    match = re.search(r'v(\d+)', latest_tag_name, re.IGNORECASE)
     if match:
         version = match.group(1)
     else:
-        raise ValueError(f"Could not extract version from tag name: {tag_name}")
-
-    # Get the commit SHA associated with the latest release tag
-    tags_url = f"https://api.github.com/repos/{repo}/git/refs/tags/{tag_name}"
-    tag_response = requests.get(tags_url)
-    tag_response.raise_for_status()  # Raise an error for bad status codes
-    tag_data = tag_response.json()
-    latest_sha = tag_data["object"]["sha"]
+        raise ValueError(f"Could not extract version from tag name: {latest_tag_name}")
 
     print(f"Latest version: {version}")
     print(f"Latest commit SHA: {latest_sha}")
@@ -50,14 +44,14 @@ try:
     for i, line in enumerate(lines):
         if line.startswith("# rTorrent stickz"):
             comment_line_index = i
-        if line.startswith("ARG RTORRENT_VERSION="):
+        if line.startswith("ARG RTORRENT_STICKZ_VERSION="):
             arg_line_index = i
 
     if comment_line_index is not None:
         lines[comment_line_index] = f'# rTorrent stickz {version}\n'
 
     if arg_line_index is not None:
-        lines[arg_line_index] = f'ARG RTORRENT_VERSION={latest_sha}\n'
+        lines[arg_line_index] = f'ARG RTORRENT_STICKZ_VERSION={latest_sha}\n'
 
     with open(dockerfile_path, "w") as f:
         f.writelines(lines)
