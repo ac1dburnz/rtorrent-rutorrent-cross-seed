@@ -16,7 +16,7 @@ try:
     print(f"Fetched tag name: {tag_name}")  # Debugging output
 
     # Use a regular expression to extract the version number from the tag name
-    match = re.search(r'v(\d+\.\d+(\.\d+)?)', tag_name)
+    match = re.search(r'v(\d+)', tag_name, re.IGNORECASE)
     if match:
         version = match.group(1)
     else:
