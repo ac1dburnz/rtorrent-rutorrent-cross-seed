@@ -17,6 +17,8 @@ git checkout -b "$branch_name"
 
 # Run catalog update script  
 python3 "$BASE_DIR/rtorrent-rutorrent-cross-seed/Scripts/rutorrent-auto-update.py"
+python3 "$BASE_DIR/rtorrent-rutorrent-cross-seed/Scripts/rtorrent-auto-update.py"
+
 
 # Commit changes  
 git add --all :/
