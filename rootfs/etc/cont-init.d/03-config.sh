@@ -26,8 +26,8 @@ RT_LOG_EXECUTE=${RT_LOG_EXECUTE:-false}
 RT_LOG_XMLRPC=${RT_LOG_XMLRPC:-false}
 RT_SESSION_SAVE_SECONDS=${RT_SESSION_SAVE_SECONDS:-3600}
 RT_TRACKER_DELAY_SCRAPE=${RT_TRACKER_DELAY_SCRAPE:-true}
-RT_SEND_BUFFER_SIZE=${RT_SEND_BUFFER_SIZE:-32M}
-RT_RECEIVE_BUFFER_SIZE=${RT_RECEIVE_BUFFER_SIZE:-32M}
+RT_SEND_BUFFER_SIZE=${RT_SEND_BUFFER_SIZE:-4M}
+RT_RECEIVE_BUFFER_SIZE=${RT_RECEIVE_BUFFER_SIZE:-4M}
 
 RU_REMOVE_CORE_PLUGINS=${RU_REMOVE_CORE_PLUGINS:-false}
 RU_HTTP_USER_AGENT=${RU_HTTP_USER_AGENT:-Mozilla/5.0 (Windows NT 6.0; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0}
@@ -311,6 +311,11 @@ if [ "$RU_REMOVE_CORE_PLUGINS" != "false" ]; then
   for i in ${RU_REMOVE_CORE_PLUGINS//,/ }
   do
     if [ -z "$i" ]; then continue; fi
+    if [ "$i" == "httprpc" ]; then
+      echo "Warning: skipping core plugin httprpc, required for ruTorrent v4.3+ operation"
+      echo "Please remove httprpc from RU_REMOVE_CORE_PLUGINS environment varriable"
+      continue;
+    fi      
     echo "Removing core plugin $i..."
     rm -rf "/var/www/rutorrent/plugins/${i}"
   done
