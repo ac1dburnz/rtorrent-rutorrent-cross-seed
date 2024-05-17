@@ -5,22 +5,28 @@ import os
 repo = "stickz/rtorrent"
 
 try:
+    # Get the latest commit SHA from the default branch
+    commits_url = f"https://api.github.com/repos/{repo}/commits"
+    commits_response = requests.get(commits_url)
+    commits_response.raise_for_status()  # Raise an error for bad status codes
+    latest_commit = commits_response.json()[0]
+    latest_sha = latest_commit["sha"]
+
     # Get the latest release information
     releases_url = f"https://api.github.com/repos/{repo}/releases/latest"
     release_response = requests.get(releases_url)
     release_response.raise_for_status()  # Raise an error for bad status codes
     latest_release = release_response.json()
 
-    # Extract the tag name and SHA of the latest release
-    tag_name = latest_release["tag_name"]
-    latest_sha = latest_release["target_commitish"]
+    # Extract the tag name of the latest release, if available
+    tag_name = latest_release.get("tag_name", "No Tag") 
 
     # Extract the version number from the tag name
     match = re.search(r'v(\d+)', tag_name, re.IGNORECASE)
     if match:
         version = match.group(1)
     else:
-        raise ValueError(f"Could not extract version from tag name: {tag_name}")
+        version = "Unknown"
 
     print(f"Latest version: {version}")
     print(f"Latest commit SHA: {latest_sha}")
@@ -65,5 +71,6 @@ except FileNotFoundError as e:
     print(f"File Not Found Error: {e}")
 except Exception as e:
     print(f"An error occurred: {e}")
+
 
 
