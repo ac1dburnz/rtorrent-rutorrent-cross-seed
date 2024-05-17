@@ -5,26 +5,22 @@ import os
 repo = "stickz/rtorrent"
 
 try:
-    # Get the tags sorted by their creation date
-    tags_url = f"https://api.github.com/repos/{repo}/git/refs/tags"
-    tags_response = requests.get(tags_url)
-    tags_response.raise_for_status()  # Raise an error for bad status codes
-    tags_data = tags_response.json()
+    # Get the latest release information
+    releases_url = f"https://api.github.com/repos/{repo}/releases/latest"
+    release_response = requests.get(releases_url)
+    release_response.raise_for_status()  # Raise an error for bad status codes
+    latest_release = release_response.json()
 
-    # Sort the tags by their creation date (using ISO 8601 date format)
-    sorted_tags = sorted(tags_data, key=lambda x: x["object"]["tagger"]["date"], reverse=True)
-
-    # Extract the latest tag and its associated SHA
-    latest_tag_data = sorted_tags[0]
-    latest_tag_name = latest_tag_data["ref"].split("/")[-1]  # Extract the tag name from the full ref
-    latest_sha = latest_tag_data["object"]["sha"]
+    # Extract the tag name and SHA of the latest release
+    tag_name = latest_release["tag_name"]
+    latest_sha = latest_release["target_commitish"]
 
     # Extract the version number from the tag name
-    match = re.search(r'v(\d+)', latest_tag_name, re.IGNORECASE)
+    match = re.search(r'v(\d+)', tag_name, re.IGNORECASE)
     if match:
         version = match.group(1)
     else:
-        raise ValueError(f"Could not extract version from tag name: {latest_tag_name}")
+        raise ValueError(f"Could not extract version from tag name: {tag_name}")
 
     print(f"Latest version: {version}")
     print(f"Latest commit SHA: {latest_sha}")
@@ -69,4 +65,5 @@ except FileNotFoundError as e:
     print(f"File Not Found Error: {e}")
 except Exception as e:
     print(f"An error occurred: {e}")
+
 
