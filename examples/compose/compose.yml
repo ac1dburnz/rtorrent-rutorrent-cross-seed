@@ -13,7 +13,7 @@ services:
     restart: always
 
   rtorrent-rutorrent:
-    image: crazymax/rtorrent-rutorrent:latest
+    image: ac1dburnz/rtorrent-rutorrent:latest
     container_name: rtorrent-rutorrent
     networks:
       - rtorrent-rutorrent
