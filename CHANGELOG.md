@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.3.2-3.1-r0 (2024/06/01)
+
+* rTorrent v3.1 (#355)
+
+## 4.3.2-3.0-r0 (2024/05/27)
+
+* ruTorrent v4.3.2 (#344)
+* Switch to [rTorrent stickz](https://github.com/stickz/rtorrent) repo (#347)
+* Disable listening for IPv6 ofr nginx (#349)
+
 ## 4.3.1-0.9.8_3-0.13.8_2-r0 (2024/05/17)
 
 * ruTorrent v4.3.1 (#344)
