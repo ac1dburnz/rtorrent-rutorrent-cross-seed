@@ -1,24 +1,24 @@
 # syntax=docker/dockerfile:1
 
 ARG LIBSIG_VERSION=3.0.3
-ARG CARES_VERSION=1.24.0
-ARG CURL_VERSION=8.5.0
-ARG XMLRPC_VERSION=01.58.00
+ARG CARES_VERSION=1.34.4
+ARG CURL_VERSION=8.11.1
 ARG MKTORRENT_VERSION=v1.1
 ARG GEOIP2_PHPEXT_VERSION=1.3.1
 
-# Novik/ruTorrent 4.3.5
-ARG RUTORRENT_VERSION=9bf6e15c4864a71ff9e9ca5ea689fd001931279b
+# Novik/ruTorrent 5.1.7
+ARG RUTORRENT_VERSION=d4daca2bcc9db172d03557152d20ef6906cef93e
 ARG GEOIP2_RUTORRENT_VERSION=4ff2bde530bb8eef13af84e4413cedea97eda148
+ARG DUMP_TORRENT_VERSION=302ac444a20442edb4aeabef65b264a85ab88ce9
 
-# rTorrent stickz 3
-ARG RTORRENT_STICKZ_VERSION=970deaebe765e8f56bc342aa03e5c81c8d4c9c8f
+# v7.2-0.9.8-0.13.8
+ARG RTORRENT_STICKZ_VERSION=2f99fa971d65aabc14a367ef077be58cd859bc79
 
-ARG ALPINE_VERSION=3.19
+ARG ALPINE_VERSION=3.21
 ARG ALPINE_S6_VERSION=${ALPINE_VERSION}-2.2.0.3
 
 FROM --platform=${BUILDPLATFORM} alpine:${ALPINE_VERSION} AS src
-RUN apk --update --no-cache add curl git tar tree xz
+RUN apk --update --no-cache add curl git tar tree sed xz
 WORKDIR /src
 
 FROM src AS src-libsig
@@ -27,12 +27,7 @@ RUN curl -sSL "https://download.gnome.org/sources/libsigc%2B%2B/3.0/libsigc%2B%2
 
 FROM src AS src-cares
 ARG CARES_VERSION
-RUN curl -sSL "https://github.com/c-ares/c-ares/releases/download/cares-${CARES_VERSION//\./\_}/c-ares-${CARES_VERSION}.tar.gz" | tar xz --strip 1
-
-FROM src AS src-xmlrpc
-RUN git init . && git remote add origin "https://github.com/crazy-max/xmlrpc-c.git"
-ARG XMLRPC_VERSION
-RUN git fetch origin "${XMLRPC_VERSION}" && git checkout -q FETCH_HEAD
+RUN curl -sSL "https://github.com/c-ares/c-ares/releases/download/v${CARES_VERSION}/c-ares-${CARES_VERSION}.tar.gz" | tar xz --strip 1
 
 FROM src AS src-curl
 ARG CURL_VERSION
@@ -44,7 +39,7 @@ ARG RTORRENT_STICKZ_VERSION
 RUN git fetch origin "${RTORRENT_STICKZ_VERSION}" && git checkout -q FETCH_HEAD
 
 FROM src AS src-mktorrent
-RUN git init . && git remote add origin "https://github.com/esmil/mktorrent.git"
+RUN git init . && git remote add origin "https://github.com/pobrn/mktorrent.git"
 ARG MKTORRENT_VERSION
 RUN git fetch origin "${MKTORRENT_VERSION}" && git checkout -q FETCH_HEAD
 
@@ -69,6 +64,13 @@ FROM src AS src-mmdb
 RUN curl -SsOL "https://github.com/crazy-max/geoip-updater/raw/mmdb/GeoLite2-City.mmdb" \
   && curl -SsOL "https://github.com/crazy-max/geoip-updater/raw/mmdb/GeoLite2-Country.mmdb"
 
+FROM src AS src-dump-torrent
+RUN git init . && git remote add origin "https://github.com/TheGoblinHero/dumptorrent.git"
+ARG DUMP_TORRENT_VERSION
+RUN git fetch origin "${DUMP_TORRENT_VERSION}" && git checkout -q FETCH_HEAD
+RUN sed -i '1i #include <sys/time.h>' scrapec.c
+RUN rm -rf .git*
+
 FROM crazymax/alpine-s6:${ALPINE_S6_VERSION} AS builder
 RUN apk --update --no-cache add \
     autoconf \
@@ -87,8 +89,8 @@ RUN apk --update --no-cache add \
     nghttp2-dev \
     openssl-dev \
     pcre-dev \
-    php82-dev \
-    php82-pear \
+    php83-dev \
+    php83-pear \
     tar \
     tree \
     udns-dev \
@@ -115,16 +117,8 @@ RUN tree ${DIST_PATH}
 
 WORKDIR /usr/local/src/curl
 COPY --from=src-curl /src .
-RUN cmake . -D ENABLE_ARES=ON CURL_LTO=ON -D CURL_USE_OPENSSL=ON -D CURL_BROTLI=ON -D CURL_ZSTD=ON -D BUILD_SHARED_LIBS=ON -D CMAKE_BUILD_TYPE:STRING="Release" -D CMAKE_C_FLAGS_RELEASE:STRING="-O3 -flto=\"$(nproc)\" -pipe"
+RUN cmake . -D ENABLE_ARES=ON -D CURL_LTO=ON -D CURL_USE_OPENSSL=ON -D CURL_BROTLI=ON -D CURL_ZSTD=ON -D BUILD_SHARED_LIBS=ON -D CMAKE_BUILD_TYPE:STRING="Release" -D CMAKE_C_FLAGS_RELEASE:STRING="-O3 -flto=\"$(nproc)\" -pipe"
 RUN cmake --build . --clean-first --parallel $(nproc)
-RUN make install -j$(nproc)
-RUN make DESTDIR=${DIST_PATH} install -j$(nproc)
-RUN tree ${DIST_PATH}
-
-WORKDIR /usr/local/src/xmlrpc
-COPY --from=src-xmlrpc /src .
-RUN ./configure --disable-wininet-client --disable-libwww-client --disable-cplusplus
-RUN make -j$(nproc) CFLAGS="-w -O3 -flto" CXXFLAGS="-w -O3 -flto"
 RUN make install -j$(nproc)
 RUN make DESTDIR=${DIST_PATH} install -j$(nproc)
 RUN tree ${DIST_PATH}
@@ -134,7 +128,7 @@ COPY --from=src-rtorrent /src .
 
 WORKDIR /usr/local/src/rtorrent/libtorrent
 RUN ./autogen.sh
-RUN ./configure --with-posix-fallocate --enable-aligned
+RUN ./configure --enable-aligned --disable-instrumentation --enable-udns
 RUN make -j$(nproc) CXXFLAGS="-w -O3 -flto -Werror=odr -Werror=lto-type-mismatch -Werror=strict-aliasing"
 RUN make install -j$(nproc)
 RUN make DESTDIR=${DIST_PATH} install -j$(nproc)
@@ -142,7 +136,7 @@ RUN tree ${DIST_PATH}
 
 WORKDIR /usr/local/src/rtorrent/rtorrent
 RUN ./autogen.sh
-RUN ./configure --with-xmlrpc-c --with-ncurses
+RUN ./configure --with-xmlrpc-tinyxml2 --with-ncurses
 RUN make -j$(nproc) CXXFLAGS="-w -O3 -flto -Werror=odr -Werror=lto-type-mismatch -Werror=strict-aliasing"
 RUN make install -j$(nproc)
 RUN make DESTDIR=${DIST_PATH} install -j$(nproc)
@@ -150,7 +144,11 @@ RUN tree ${DIST_PATH}
 
 WORKDIR /usr/local/src/mktorrent
 COPY --from=src-mktorrent /src .
-RUN make -j$(nproc) CC=gcc CFLAGS="-w -O3 -flto"
+RUN echo "CC = gcc" >> Makefile	
+RUN echo "CFLAGS = -w -flto -O3" >> Makefile
+RUN echo "USE_PTHREADS = 1" >> Makefile
+RUN echo "USE_OPENSSL = 1" >> Makefile
+RUN make -j$(nproc)
 RUN make install -j$(nproc)
 RUN make DESTDIR=${DIST_PATH} install -j$(nproc)
 RUN tree ${DIST_PATH}
@@ -159,13 +157,19 @@ WORKDIR /usr/local/src/geoip2-phpext
 COPY --from=src-geoip2-phpext /src .
 RUN <<EOT
   set -e
-  phpize82
+  phpize83
   ./configure
   make
   make install
 EOT
-RUN mkdir -p ${DIST_PATH}/usr/lib/php82/modules
-RUN cp -f /usr/lib/php82/modules/geoip.so ${DIST_PATH}/usr/lib/php82/modules/
+RUN mkdir -p ${DIST_PATH}/usr/lib/php83/modules
+RUN cp -f /usr/lib/php83/modules/geoip.so ${DIST_PATH}/usr/lib/php83/modules/
+RUN tree ${DIST_PATH}
+
+WORKDIR /usr/local/src/dump-torrent
+COPY --from=src-dump-torrent /src .
+RUN make dumptorrent -j$(nproc)
+RUN cp dumptorrent ${DIST_PATH}/usr/local/bin
 RUN tree ${DIST_PATH}
 
 FROM crazymax/alpine-s6:${ALPINE_S6_VERSION}
@@ -187,9 +191,11 @@ RUN echo "net.core.rmem_max = 67108864" >> /etc/sysctl.conf \
   && sysctl -p
 
 # unrar package is not available since alpine 3.15
+# dhclient package is not available since alpine 3.21
 RUN echo "@314 http://dl-cdn.alpinelinux.org/alpine/v3.14/main" >> /etc/apk/repositories \
-  && apk --update --no-cache add unrar@314
-
+  && echo "@320 http://dl-cdn.alpinelinux.org/alpine/v3.20/main" >> /etc/apk/repositories \
+  && apk --update --no-cache add unrar@314 dhclient@320
+  
 RUN apk --update --no-cache add \
     apache2-utils \
     bash \
@@ -198,8 +204,6 @@ RUN apk --update --no-cache add \
     brotli \
     ca-certificates \
     coreutils \
-    cppunit-dev \
-    dhclient \
     ffmpeg \
     findutils \
     geoip \
@@ -212,25 +216,25 @@ RUN apk --update --no-cache add \
     nginx-mod-http-dav-ext \
     nginx-mod-http-geoip2 \
     openssl \
-    php82 \
-    php82-bcmath \
-    php82-ctype \
-    php82-curl \
-    php82-dom \
-    php82-fileinfo \
-    php82-fpm \
-    php82-mbstring \
-    php82-openssl \
-    php82-phar \
-    php82-posix \
-    php82-session \
-    php82-sockets \
-    php82-xml \
-    php82-zip \
     php-mbstring \
     libxml2-dev \
     libxml2 \
     php-dom \
+    php83 \
+    php83-bcmath \
+    php83-ctype \
+    php83-curl \
+    php83-dom \
+    php83-fileinfo \
+    php83-fpm \
+    php83-mbstring \
+    php83-openssl \
+    php83-phar \
+    php83-posix \
+    php83-session \
+    php83-sockets \
+    php83-xml \
+    php83-zip \
     python3 \
     py3-pip \
     shadow \
