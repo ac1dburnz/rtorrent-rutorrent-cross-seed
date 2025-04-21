@@ -1,9 +1,7 @@
 name: build-2
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 on:
   schedule:
     - cron: '0 8 */6 * *' # every 6 days to keep cache
@@ -17,11 +15,9 @@ on:
   pull_request:
     paths-ignore:
       - '**.md'
-
 env:
   DOCKERHUB_SLUG: ac1dburn/rtorrent-rutorrent-cross-seed
   GHCR_SLUG: ghcr.io/ac1dburnz/rtorrent-rutorrent-cross-seed
-
 jobs:
   prepare:
     runs-on: ubuntu-latest
@@ -40,7 +36,6 @@ jobs:
         name: Show matrix
         run: |
           echo ${{ steps.platforms.outputs.matrix }}
-
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 480
@@ -81,7 +76,7 @@ jobs:
           mv "${{ steps.meta.outputs.bake-file }}" "/tmp/bake-meta.json"
       -
         name: Upload meta bake definition
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bake-meta
           path: /tmp/bake-meta.json
@@ -133,13 +128,12 @@ jobs:
           touch "/tmp/digests/${digest#sha256:}"
       -
         name: Upload digest
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: digests
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
-
   merge:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
@@ -148,13 +142,13 @@ jobs:
     steps:
       -
         name: Download meta bake definition
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: bake-meta
           path: /tmp
       -
         name: Download digests
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: digests
           path: /tmp/digests
