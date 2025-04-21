@@ -1,7 +1,9 @@
 name: build-2
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 on:
   schedule:
     - cron: '0 8 */6 * *' # every 6 days to keep cache
@@ -15,47 +17,47 @@ on:
   pull_request:
     paths-ignore:
       - '**.md'
+
 env:
   DOCKERHUB_SLUG: ac1dburn/rtorrent-rutorrent-cross-seed
   GHCR_SLUG: ghcr.io/ac1dburnz/rtorrent-rutorrent-cross-seed
+
 jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.platforms.outputs.matrix }}
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v4
-      -
-        name: Create matrix
+
+      - name: Create matrix
         id: platforms
         run: |
           echo "matrix=$(docker buildx bake image-all --print | jq -cr '.target."image-all".platforms')" >>${GITHUB_OUTPUT}
-      -
-        name: Show matrix
+
+      - name: Show matrix
         run: |
           echo ${{ steps.platforms.outputs.matrix }}
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 480
-    needs:
-      - prepare
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
         platform: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
-      -
-        name: Prepare
+      - name: Prepare
         run: |
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-      -
-        name: Checkout
+
+      - name: Checkout
         uses: actions/checkout@v4
-      -
-        name: Docker meta
+
+      - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -70,43 +72,43 @@ jobs:
             org.opencontainers.image.title=rTorrent and ruTorrent
             org.opencontainers.image.description=rTorrent and ruTorrent
             org.opencontainers.image.vendor=ac1dburnz
-      -
-        name: Rename meta bake definition file
+
+      - name: Rename meta bake definition file
         run: |
           mv "${{ steps.meta.outputs.bake-file }}" "/tmp/bake-meta.json"
-      -
-        name: Upload meta bake definition
+
+      - name: Upload meta bake definition
         uses: actions/upload-artifact@v4
         with:
-          name: bake-meta
+          name: bake-meta-${{ strategy.job-index }}
           path: /tmp/bake-meta.json
           if-no-files-found: error
           retention-days: 1
-      -
-        name: Set up QEMU
+
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-      -
-        name: Set up Docker Buildx
+
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
           buildkitd-flags: --debug
-      -
-        name: Login to DockerHub
+
+      - name: Login to DockerHub
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      -
-        name: Login to GHCR
+
+      - name: Login to GHCR
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Build
+
+      - name: Build
         id: bake
         uses: docker/bake-action@v4
         with:
@@ -120,65 +122,70 @@ jobs:
             *.cache-from=type=gha,scope=build-${{ env.PLATFORM_PAIR }}
             *.cache-to=type=gha,scope=build-${{ env.PLATFORM_PAIR }},mode=max
             *.output=type=image,"name=${{ env.DOCKERHUB_SLUG }},${{ env.GHCR_SLUG }}",push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
-      -
-        name: Export digest
+
+      - name: Export digest
         run: |
           mkdir -p /tmp/digests
           digest="${{ fromJSON(steps.bake.outputs.metadata).image['containerimage.digest'] }}"
           touch "/tmp/digests/${digest#sha256:}"
-      -
-        name: Upload digest
+
+      - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests
+          name: digests-${{ strategy.job-index }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
+
   merge:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
-    needs:
-      - build
+    needs: build
     steps:
-      -
-        name: Download meta bake definition
+      - name: Download meta bake definitions
         uses: actions/download-artifact@v4
         with:
-          name: bake-meta
-          path: /tmp
-      -
-        name: Download digests
+          pattern: bake-meta-*
+          path: /tmp/bake-meta
+          merge-multiple: true
+
+      - name: Download all digests
         uses: actions/download-artifact@v4
         with:
-          name: digests
+          pattern: digests-*
           path: /tmp/digests
-      -
-        name: Set up Docker Buildx
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      -
-        name: Login to DockerHub
+
+      - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      -
-        name: Login to GHCR
+
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Create manifest list and push
+
+      - name: Create manifest list and push (DockerHub)
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create $(jq -cr '.target."docker-metadata-action".tags | map(select(startswith("${{ env.DOCKERHUB_SLUG }}")) | "-t " + .) | join(" ")' /tmp/bake-meta.json) \
+          docker buildx imagetools create $(jq -cr '.target."docker-metadata-action".tags | map(select(startswith("${{ env.DOCKERHUB_SLUG }}")) | "-t " + .) | join(" ")' /tmp/bake-meta/bake-meta-0.json) \
             $(printf '${{ env.DOCKERHUB_SLUG }}@sha256:%s ' *)
-          docker buildx imagetools create $(jq -cr '.target."docker-metadata-action".tags | map(select(startswith("${{ env.GHCR_SLUG }}")) | "-t " + .) | join(" ")' /tmp/bake-meta.json) \
-            $(printf '${{ env.GHCR_SLUG }}@sha256:%s ' *)
-      -
-        name: Inspect image
+
+      - name: Create manifest list and push (GHCR)
+        working-directory: /tmp/digests
         run: |
-          tag=$(jq -r '.target."docker-metadata-action".args.DOCKER_META_VERSION' /tmp/bake-meta.json)
+          docker buildx imagetools create $(jq -cr '.target."docker-metadata-action".tags | map(select(startswith("${{ env.GHCR_SLUG }}")) | "-t " + .) | join(" ")' /tmp/bake-meta/bake-meta-0.json) \
+            $(printf '${{ env.GHCR_SLUG }}@sha256:%s ' *)
+
+      - name: Inspect image
+        run: |
+          tag=$(jq -r '.target."docker-metadata-action".args.DOCKER_META_VERSION' /tmp/bake-meta/bake-meta-0.json)
           docker buildx imagetools inspect ${{ env.DOCKERHUB_SLUG }}:${tag}
           docker buildx imagetools inspect ${{ env.GHCR_SLUG }}:${tag}
