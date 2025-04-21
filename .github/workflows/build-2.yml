@@ -28,7 +28,7 @@ env:
 
 jobs:
   build:
-    uses: crazy-max/.github/.github/workflows/bake-distribute-mp.yml@0acc187b016a2946786f201397bbcfb2c530ffc7
+    uses: ac1dburn/.github/.github/workflows/bake-distribute-mp.yml@0acc187b016a2946786f201397bbcfb2c530ffc7
     permissions:
       # same as global permissions
       contents: read
@@ -39,12 +39,12 @@ jobs:
       matrix:
         include:
           -
-            image: crazymax/rtorrent-rutorrent
+            image: ac1dburn/rtorrent-rutorrent-cross-seed
             login-registry: docker.io
-            login-username: crazymax
+            login-username: ac1dburn
             login-secret-key: DOCKER_PASSWORD
           -
-            image: ghcr.io/crazy-max/rtorrent-rutorrent
+            image: ghcr.io/ac1dburn/rtorrent-rutorrent-cross-seed
             login-registry: ghcr.io
             login-username: ${{ github.repository_owner }}
             login-secret-key: GITHUB_TOKEN
@@ -61,7 +61,7 @@ jobs:
       meta-labels: |
         org.opencontainers.image.title=rTorrent and ruTorrent
         org.opencontainers.image.description=rTorrent and ruTorrent
-        org.opencontainers.image.vendor=CrazyMax
+        org.opencontainers.image.vendor=ac1dburn
       login-registry: ${{ matrix.login-registry }}
       login-username: ${{ matrix.login-username }}
     secrets:
