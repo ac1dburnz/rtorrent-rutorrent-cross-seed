@@ -7,15 +7,18 @@ if [ -z "$BASE_DIR" ]; then
   exit 1
 fi
 
+# Set the correct default branch name (replace 'master' with your actual branch name if different)
+DEFAULT_BRANCH="master"  # Change this to 'main' or your actual default branch
+
 # Generate a branch name with the current date and time
 branch_name="branch_$(date +'%Y%m%d%H%M%S')"
 
 # Navigate to the Scripts directory
 cd "$BASE_DIR/Scripts" || { echo "Error: Scripts directory not found in $BASE_DIR"; exit 1; }
 
-# Ensure on the main branch before creating a new one
-git checkout main || { echo "Error: Failed to checkout main branch"; exit 1; }
-git pull origin main || { echo "Error: Failed to pull latest changes from main"; exit 1; }
+# Ensure on the default branch before creating a new one
+git checkout "$DEFAULT_BRANCH" || { echo "Error: Failed to checkout $DEFAULT_BRANCH branch"; exit 1; }
+git pull origin "$DEFAULT_BRANCH" || { echo "Error: Failed to pull latest changes from $DEFAULT_BRANCH"; exit 1; }
 
 # Create and switch to a new branch
 git checkout -b "$branch_name" || { echo "Error: Failed to create and switch to branch $branch_name"; exit 1; }
@@ -37,7 +40,7 @@ title="Automatically generated changes on $branch_name"
 body="This pull request is automatically generated."
 
 pr_response=$(curl -X POST -H "Authorization: token $github_token" \
-  -d '{"title":"'"$title"'","body":"'"$body"'","head":"'"$branch_name"'","base":"main"}' \
+  -d '{"title":"'"$title"'","body":"'"$body"'","head":"'"$branch_name"'","base":"'"$DEFAULT_BRANCH"'"}' \
   "https://api.github.com/repos/$repo/pulls") || { echo "Error: Failed to create pull request"; exit 1; }
 
 pr_number=$(echo "$pr_response" | jq '.number')
