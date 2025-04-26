@@ -2,27 +2,32 @@ name: Update Repo Script
 
 on:
   schedule:
-    # Run daily at 00:00 UTC
-    - cron: '0 0 * * *'
-  workflow_dispatch: # Allow manual triggering of the workflow
+    - cron: '0 0 * * *' # Run daily at midnight UTC
+  workflow_dispatch: # Allow manual runs
 
 jobs:
-  run-script:
+  run-update-script:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository
+      # Step 1: Check out the repository
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Set up any dependencies (e.g., jq)
+      # Step 2: Configure Git User
+      - name: Configure Git User
+        run: |
+          git config --global user.email ${{ secrets.email }}
+          git config --global user.name ${{ secrets.name }}
+
+      # Step 3: Install Dependencies
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq
+          sudo apt-get install -y jq python3
 
-      # Run your script
-      - name: Run Script
+      # Step 4: Run the Script
+      - name: Run Update Script
         run: |
           chmod +x ./Scripts/update-repo.sh
           ./Scripts/update-repo.sh
