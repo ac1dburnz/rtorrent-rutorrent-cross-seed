@@ -17,8 +17,8 @@ branch_name="branch_$(date +'%Y%m%d%H%M%S')"
 cd "$BASE_DIR/Scripts" || { echo "Error: Scripts directory not found in $BASE_DIR"; exit 1; }
 
 # Ensure on the default branch before creating a new one
-git checkout "$DEFAULT_BRANCH" || { echo "Error: Failed to checkout $DEFAULT_BRANCH branch"; exit 1; }
-git pull origin "$DEFAULT_BRANCH" || { echo "Error: Failed to pull latest changes from $DEFAULT_BRANCH"; exit 1; }
+#git checkout "$DEFAULT_BRANCH" || { echo "Error: Failed to checkout $DEFAULT_BRANCH branch"; exit 1; }
+#git pull origin "$DEFAULT_BRANCH" || { echo "Error: Failed to pull latest changes from $DEFAULT_BRANCH"; exit 1; }
 
 # Create and switch to a new branch
 git checkout -b "$branch_name" || { echo "Error: Failed to create and switch to branch $branch_name"; exit 1; }
