@@ -9,38 +9,33 @@ headers = {"Accept": "application/vnd.github.v3+json"}
 if token:
     headers["Authorization"] = f"token {token}"
 
-github_workspace = os.getenv("GITHUB_WORKSPACE", os.getcwd())
-dockerfile = os.path.join(github_workspace, "rtorrent-rutorrent-cross-seed", "Dockerfile")
+workspace = os.getenv("GITHUB_WORKSPACE", os.getcwd())
+dockerfile_path = os.path.join(workspace, "Dockerfile")
 
 try:
-    # Fetch latest release info
-    url = f"https://api.github.com/repos/{repo}/releases/latest"
-    resp = requests.get(url, headers=headers)
-    resp.raise_for_status()
-    tag = resp.json()["tag_name"]
+    # Latest release
+    rel = requests.get(f"https://api.github.com/repos/{repo}/releases/latest", headers=headers)
+    rel.raise_for_status()
+    tag = rel.json()["tag_name"]
     version = re.search(r"v(\d+\.\d+\.\d+)", tag).group(1)
 
-    # Fetch SHA for the tag
-    ref_url = f"https://api.github.com/repos/{repo}/git/refs/tags/{tag}"
-    resp = requests.get(ref_url, headers=headers)
-    resp.raise_for_status()
-    latest_sha = resp.json()["object"]["sha"]
+    # Tag SHA
+    ref = requests.get(f"https://api.github.com/repos/{repo}/git/refs/tags/{tag}", headers=headers)
+    ref.raise_for_status()
+    latest_sha = ref.json()["object"]["sha"]
 
-    # Update Dockerfile
-    with open(dockerfile, 'r') as f:
-        lines = f.readlines()
-
-    for i, line in enumerate(lines):
-        if line.startswith("# Novik/ruTorrent"):
-            lines[i] = f"# Novik/ruTorrent {version}\n"
-        if line.startswith("ARG RUTORRENT_VERSION="):
-            lines[i] = f"ARG RUTORRENT_VERSION={latest_sha}\n"
-
-    with open(dockerfile, 'w') as f:
-        f.writelines(lines)
+    # Patch Dockerfile
+    lines = open(dockerfile_path).read().splitlines(True)
+    with open(dockerfile_path, 'w') as f:
+        for line in lines:
+            if line.startswith("# Novik/ruTorrent"):
+                f.write(f"# Novik/ruTorrent {version}\n")
+            elif line.startswith("ARG RUTORRENT_VERSION="):
+                f.write(f"ARG RUTORRENT_VERSION={latest_sha}\n")
+            else:
+                f.write(line)
 
     print(f"ruTorrent updated to {version}, SHA {latest_sha}")
-
 except Exception as e:
     print(f"Error in rutorrent-auto-update: {e}")
     raise
