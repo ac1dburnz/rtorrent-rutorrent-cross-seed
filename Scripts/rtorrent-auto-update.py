@@ -6,35 +6,44 @@ import requests
 # Configuration
 repo = "stickz/rtorrent"
 
+# Auth headers
 token = os.getenv("GITHUB_TOKEN")
 headers = {"Accept": "application/vnd.github.v3+json"}
 if token:
     headers["Authorization"] = f"token {token}"
 
-# Determine paths relative to this script's location
+# Locate Dockerfile by walking up from this script
+def find_dockerfile(start_dir):
+    current = start_dir
+    while True:
+        candidate = os.path.join(current, "Dockerfile")
+        if os.path.isfile(candidate):
+            return candidate
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    raise FileNotFoundError("Dockerfile not found in any parent directory.")
+
 script_dir = os.path.dirname(os.path.realpath(__file__))
-repo_root = os.path.abspath(os.path.join(script_dir, os.pardir))
-dockerfile_path = os.path.join(repo_root, "Dockerfile")
+dockerfile_path = find_dockerfile(script_dir)
 
 try:
-    # Fetch latest commit SHA
-    commits_url = f"https://api.github.com/repos/{repo}/commits"
-    resp = requests.get(commits_url, headers=headers)
-    resp.raise_for_status()
-    latest_sha = resp.json()[0]["sha"]
+    # Get latest commit SHA
+    commits = requests.get(f"https://api.github.com/repos/{repo}/commits", headers=headers)
+    commits.raise_for_status()
+    latest_sha = commits.json()[0]["sha"]
 
-    # Fetch latest release tag
-    releases_url = f"https://api.github.com/repos/{repo}/releases/latest"
-    resp = requests.get(releases_url, headers=headers)
-    resp.raise_for_status()
-    tag = resp.json().get("tag_name", "")
+    # Get latest release tag
+    release = requests.get(f"https://api.github.com/repos/{repo}/releases/latest", headers=headers)
+    release.raise_for_status()
+    tag = release.json().get("tag_name", "")
     match = re.search(r"v(\d+)", tag, re.IGNORECASE)
     version = match.group(1) if match else "Unknown"
 
-    # Read and patch Dockerfile
-    with open(dockerfile_path, 'r') as f:
+    # Patch Dockerfile
+    with open(dockerfile_path) as f:
         lines = f.readlines()
-
     with open(dockerfile_path, 'w') as f:
         for line in lines:
             if line.startswith("# rTorrent stickz"):
@@ -44,8 +53,7 @@ try:
             else:
                 f.write(line)
 
-    print(f"rTorrent updated to version {version}, SHA {latest_sha}")
-
+    print(f"rTorrent updated: version={version}, sha={latest_sha}")
 except Exception as e:
     print(f"Error in rtorrent-auto-update: {e}")
     raise
