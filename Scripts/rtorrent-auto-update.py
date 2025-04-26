@@ -1,49 +1,46 @@
 #!/usr/bin/env python3
 import os
 import re
+#!/usr/bin/env python3
+import os
+import re
 import requests
 
-# Configuration
 repo = "stickz/rtorrent"
 token = os.getenv("GITHUB_TOKEN")
 headers = {"Accept": "application/vnd.github.v3+json"}
 if token:
     headers["Authorization"] = f"token {token}"
 
-# Paths
-github_workspace = os.getenv("GITHUB_WORKSPACE", os.getcwd())
-dockerfile = os.path.join(github_workspace, "rtorrent-rutorrent-cross-seed", "Dockerfile")
+# GITHUB_WORKSPACE is already the repo root; Dockerfile sits here
+workspace = os.getenv("GITHUB_WORKSPACE", os.getcwd())
+dockerfile_path = os.path.join(workspace, "Dockerfile")
 
 try:
-    # Fetch latest commit
-    commits_url = f"https://api.github.com/repos/{repo}/commits"
-    resp = requests.get(commits_url, headers=headers)
-    resp.raise_for_status()
-    latest_sha = resp.json()[0]["sha"]
+    # Latest commit SHA
+    commits = requests.get(f"https://api.github.com/repos/{repo}/commits", headers=headers)
+    commits.raise_for_status()
+    latest_sha = commits.json()[0]["sha"]
 
-    # Fetch latest release tag
-    release_url = f"https://api.github.com/repos/{repo}/releases/latest"
-    resp = requests.get(release_url, headers=headers)
-    resp.raise_for_status()
-    tag = resp.json().get("tag_name", "")
-    version = re.search(r"v(\d+)", tag, re.IGNORECASE)
-    version = version.group(1) if version else "Unknown"
+    # Latest release tag => version
+    rel = requests.get(f"https://api.github.com/repos/{repo}/releases/latest", headers=headers)
+    rel.raise_for_status()
+    tag = rel.json().get("tag_name", "")
+    m = re.search(r"v(\d+)", tag, re.IGNORECASE)
+    version = m.group(1) if m else "Unknown"
 
-    # Update Dockerfile
-    with open(dockerfile, 'r') as f:
-        lines = f.readlines()
+    # Patch Dockerfile
+    lines = open(dockerfile_path).read().splitlines(True)
+    with open(dockerfile_path, 'w') as f:
+        for line in lines:
+            if line.startswith("# rTorrent stickz"):
+                f.write(f"# rTorrent stickz {version}\n")
+            elif line.startswith("ARG RTORRENT_STICKZ_VERSION="):
+                f.write(f"ARG RTORRENT_STICKZ_VERSION={latest_sha}\n")
+            else:
+                f.write(line)
 
-    for i, line in enumerate(lines):
-        if line.startswith("# rTorrent stickz"):
-            lines[i] = f"# rTorrent stickz {version}\n"
-        if line.startswith("ARG RTORRENT_STICKZ_VERSION="):
-            lines[i] = f"ARG RTORRENT_STICKZ_VERSION={latest_sha}\n"
-
-    with open(dockerfile, 'w') as f:
-        f.writelines(lines)
-
-    print(f"rTorrent updated to version {version}, SHA {latest_sha}")
-
+    print(f"rTorrent updated to {version}, SHA {latest_sha}")
 except Exception as e:
     print(f"Error in rtorrent-auto-update: {e}")
     raise
