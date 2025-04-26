@@ -7,8 +7,10 @@ if [ -z "$BASE_DIR" ]; then
   exit 1
 fi
 
-# Set the correct default branch name (update this to match your repository)
-DEFAULT_BRANCH="master"  # Replace 'master' with your actual default branch name
+export BASE_DIR  # Export the variable to be used by child processes
+
+# Set the default branch name (update this to match your repository's default branch)
+DEFAULT_BRANCH="main"  # Replace 'main' with 'master' or other branch name if needed
 
 # Generate a branch name with the current date and time
 branch_name="branch_$(date +'%Y%m%d%H%M%S')"
