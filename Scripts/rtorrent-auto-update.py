@@ -1,36 +1,40 @@
 #!/usr/bin/env python3
 import os
 import re
-#!/usr/bin/env python3
-import os
-import re
 import requests
 
+# Configuration
 repo = "stickz/rtorrent"
+
 token = os.getenv("GITHUB_TOKEN")
 headers = {"Accept": "application/vnd.github.v3+json"}
 if token:
     headers["Authorization"] = f"token {token}"
 
-# GITHUB_WORKSPACE is already the repo root; Dockerfile sits here
-workspace = os.getenv("GITHUB_WORKSPACE", os.getcwd())
-dockerfile_path = os.path.join(workspace, "Dockerfile")
+# Determine paths relative to this script's location
+script_dir = os.path.dirname(os.path.realpath(__file__))
+repo_root = os.path.abspath(os.path.join(script_dir, os.pardir))
+dockerfile_path = os.path.join(repo_root, "Dockerfile")
 
 try:
-    # Latest commit SHA
-    commits = requests.get(f"https://api.github.com/repos/{repo}/commits", headers=headers)
-    commits.raise_for_status()
-    latest_sha = commits.json()[0]["sha"]
+    # Fetch latest commit SHA
+    commits_url = f"https://api.github.com/repos/{repo}/commits"
+    resp = requests.get(commits_url, headers=headers)
+    resp.raise_for_status()
+    latest_sha = resp.json()[0]["sha"]
 
-    # Latest release tag => version
-    rel = requests.get(f"https://api.github.com/repos/{repo}/releases/latest", headers=headers)
-    rel.raise_for_status()
-    tag = rel.json().get("tag_name", "")
-    m = re.search(r"v(\d+)", tag, re.IGNORECASE)
-    version = m.group(1) if m else "Unknown"
+    # Fetch latest release tag
+    releases_url = f"https://api.github.com/repos/{repo}/releases/latest"
+    resp = requests.get(releases_url, headers=headers)
+    resp.raise_for_status()
+    tag = resp.json().get("tag_name", "")
+    match = re.search(r"v(\d+)", tag, re.IGNORECASE)
+    version = match.group(1) if match else "Unknown"
 
-    # Patch Dockerfile
-    lines = open(dockerfile_path).read().splitlines(True)
+    # Read and patch Dockerfile
+    with open(dockerfile_path, 'r') as f:
+        lines = f.readlines()
+
     with open(dockerfile_path, 'w') as f:
         for line in lines:
             if line.startswith("# rTorrent stickz"):
@@ -40,7 +44,8 @@ try:
             else:
                 f.write(line)
 
-    print(f"rTorrent updated to {version}, SHA {latest_sha}")
+    print(f"rTorrent updated to version {version}, SHA {latest_sha}")
+
 except Exception as e:
     print(f"Error in rtorrent-auto-update: {e}")
     raise
