@@ -33,4 +33,4 @@ jobs:
           chmod +x ./Scripts/update-repo.sh
           ./Scripts/update-repo.sh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Use GitHub Actions' built-in token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
