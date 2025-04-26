@@ -1,50 +1,58 @@
 #!/bin/bash
 
+# Dynamically determine the repository root directory
+BASE_DIR=$(git rev-parse --show-toplevel)
+if [ -z "$BASE_DIR" ]; then
+  echo "Error: Unable to determine the repository root. Ensure this script is run inside a Git repository."
+  exit 1
+fi
 
-#  Generate a branch name with current date and time
-branch_name="branch_$(date +'%Y%m%d%H%M%S')" 
+# Generate a branch name with the current date and time
+branch_name="branch_$(date +'%Y%m%d%H%M%S')"
 
-# Go to directory
-cd "$BASE_DIR/rtorrent-rutorrent-cross-seed/Scripts"
+# Navigate to the Scripts directory
+cd "$BASE_DIR/Scripts" || { echo "Error: Scripts directory not found in $BASE_DIR"; exit 1; }
 
-# Ensure on main branch before creating new one  
-git checkout main
-git pull origin main
+# Ensure on the main branch before creating a new one
+git checkout main || { echo "Error: Failed to checkout main branch"; exit 1; }
+git pull origin main || { echo "Error: Failed to pull latest changes from main"; exit 1; }
 
-# Create and switch to new branch
-git checkout -b "$branch_name"
+# Create and switch to a new branch
+git checkout -b "$branch_name" || { echo "Error: Failed to create and switch to branch $branch_name"; exit 1; }
 
+# Run update scripts
+python3 ./rutorrent-auto-update.py || { echo "Error: Failed to run rutorrent-auto-update.py"; exit 1; }
+python3 ./rtorrent-auto-update.py || { echo "Error: Failed to run rtorrent-auto-update.py"; exit 1; }
 
-# Run catalog update script  
-python3 "$BASE_DIR/rtorrent-rutorrent-cross-seed/Scripts/rutorrent-auto-update.py"
-python3 "$BASE_DIR/rtorrent-rutorrent-cross-seed/Scripts/rtorrent-auto-update.py"
+# Commit changes
+git add --all || { echo "Error: Failed to stage changes"; exit 1; }
+git commit -m "Automatically generated changes on $branch_name" || { echo "Error: Failed to commit changes"; exit 1; }
 
+# Push changes
+git push origin "$branch_name" || { echo "Error: Failed to push changes to branch $branch_name"; exit 1; }
 
-# Commit changes  
-git add --all :/
-git commit -m "Automatically generated changes on $branch_name"
-
-# Push changes 
-git push origin "$branch_name"
-
-# Create PR
+# Create a pull request
 repo="ac1dburnz/rtorrent-rutorrent-cross-seed"
 title="Automatically generated changes on $branch_name"
-body="This pull request is automatically generated." 
+body="This pull request is automatically generated."
 
 pr_response=$(curl -X POST -H "Authorization: token $github_token" \
   -d '{"title":"'"$title"'","body":"'"$body"'","head":"'"$branch_name"'","base":"main"}' \
-  "https://api.github.com/repos/$repo/pulls")
+  "https://api.github.com/repos/$repo/pulls") || { echo "Error: Failed to create pull request"; exit 1; }
 
-pr_number=$(echo $pr_response | jq '.number')
+pr_number=$(echo "$pr_response" | jq '.number')
+if [ -z "$pr_number" ] || [ "$pr_number" == "null" ]; then
+  echo "Error: Failed to retrieve pull request number"
+  exit 1
+fi
 
-# Set PR to squash merge 
+# Set PR to squash merge
 curl -X PATCH -H "Authorization: token $github_token" \
   -d '{"merge_method":"squash"}' \
-  "https://api.github.com/repos/$repo/pulls/$pr_number"
+  "https://api.github.com/repos/$repo/pulls/$pr_number" || { echo "Error: Failed to set squash merge method"; exit 1; }
 
 # Merge PR
 curl -X PUT -H "Authorization: token $github_token" \
-  "https://api.github.com/repos/$repo/pulls/$pr_number/merge"
+  "https://api.github.com/repos/$repo/pulls/$pr_number/merge" || { echo "Error: Failed to merge pull request"; exit 1; }
 
 echo "PR merged successfully"
