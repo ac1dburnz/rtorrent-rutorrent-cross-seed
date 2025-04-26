@@ -7,8 +7,8 @@ if [ -z "$BASE_DIR" ]; then
   exit 1
 fi
 
-# Set the correct default branch name (replace 'master' with your actual branch name if different)
-DEFAULT_BRANCH="master"  # Change this to 'main' or your actual default branch
+# Set the correct default branch name (replace 'main' with your actual branch name if different)
+DEFAULT_BRANCH="main"  # Update this if your default branch has a different name
 
 # Generate a branch name with the current date and time
 branch_name="branch_$(date +'%Y%m%d%H%M%S')"
