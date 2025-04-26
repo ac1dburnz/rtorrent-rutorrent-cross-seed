@@ -2,8 +2,8 @@ name: Update Repo Script
 
 on:
   schedule:
-    - cron: '0 0 * * *'    # Run daily at midnight UTC
-  workflow_dispatch:        # Manual trigger
+    - cron: '0 0 * * *'    # daily at midnight UTC
+  workflow_dispatch:        # manual trigger
 
 jobs:
   run-update-script:
