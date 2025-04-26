@@ -2,35 +2,33 @@ name: Update Repo Script
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Run daily at midnight UTC
-  workflow_dispatch: # Allow manual triggering
+    - cron: '0 0 * * *'    # Run daily at midnight UTC
+  workflow_dispatch:        # Manual trigger
 
 jobs:
   run-update-script:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Check out the repository
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up Git
-      - name: Configure Git User
+      - name: Set up Git user
         run: |
           git config --global user.email "github-actions-bot@users.noreply.github.com"
           git config --global user.name "GitHub Actions Bot"
 
-      # Step 3: Install Dependencies
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y jq python3 python3-pip
           pip3 install requests
 
-      # Step 4: Run Update Script
-      - name: Run Update Script
+      - name: Export BASE_DIR
+        run: echo "BASE_DIR=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Run update-repo script
         run: |
-          chmod +x ./Scripts/update-repo.sh
+          chmod +x Scripts/update-repo.sh
           ./Scripts/update-repo.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
