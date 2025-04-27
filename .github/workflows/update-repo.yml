@@ -1,150 +1,49 @@
-name: Component Updates
-on:
-  schedule:
-    - cron: '0 0 * * *'  # Daily at midnight UTC
-  workflow_dispatch:
-
-jobs:
-  component-updates:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
-          pip install requests
-
-      # Install GitHub CLI
-      - name: Setup GitHub CLI
-        uses: actions/setup-gh-cli@v1
-
-      - name: Run rTorrent update
-        run: python3 Scripts/rtorrent-auto-update.py
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BASE_DIR: ${{ github.workspace }}
-
-      - name: Run ruTorrent update
-        run: python3 Scripts/rutorrent-auto-update.py
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BASE_DIR: ${{ github.workspace }}
-
-      - name: Check for Dockerfile changes
-        id: check-changes
-        run: |
-          git diff --quiet Dockerfile || echo "changes=true" >> $GITHUB_ENV
-
-      - name: Create update branch
-        if: env.changes == 'true'
-        run: |
-          branch_name="update-$(date +'%Y%m%d%H%M%S')"
-          git config --global user.email "github-actions@users.noreply.github.com"
-          git config --global user.name "GitHub Actions"
-          git checkout -b $branch_name
-          git add Dockerfile
-          git commit -m "Update component versions"
-          git push origin $branch_name
-          echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
-
       - name: Create and merge PR
         if: env.changes == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          REPO: ${{ github.repository }}
         run: |
-          pr_response=$(curl -X POST -H "Authorization: token $GH_TOKEN" \
-            -d '{"title":"Automatically generated changes on ${{ env.BRANCH_NAME }}","body":"Automatic update of components from upstream","head":"${{ env.BRANCH_NAME }}","base":"main"}' \
-            "https://api.github.com/repos/${{ github.repository }}/pulls")
+          # Safely generate JSON payload using jq
+          pr_data=$(jq -n \
+            --arg title "Automatically generated changes on $BRANCH_NAME" \
+            --arg body "Automatic update of components from upstream" \
+            --arg head "$BRANCH_NAME" \
+            '{title: $title, body: $body, head: $head, base: "main"}')
 
-          pr_number=$(echo $pr_response | jq '.number')
+          # Create PR
+          pr_response=$(curl -s -X POST -H "Authorization: token $GH_TOKEN" \
+            -d "$pr_data" \
+            "https://api.github.com/repos/$REPO/pulls")
 
-          # Set PR to squash merge
+          # Check for errors
+          pr_error=$(echo "$pr_response" | jq -r '.message')
+          if [[ "$pr_error" != "null" ]]; then
+            echo "PR creation failed: $pr_error"
+            exit 1
+          fi
+
+          pr_number=$(echo "$pr_response" | jq -r '.number')
+          if [[ -z "$pr_number" ]]; then
+            echo "Failed to extract PR number"
+            exit 1
+          fi
+
+          # Enable squash merge
           curl -X PATCH -H "Authorization: token $GH_TOKEN" \
             -d '{"merge_method":"squash"}' \
-            "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number"
+            "https://api.github.com/repos/$REPO/pulls/$pr_number"
 
           # Merge PR
-          curl -X PUT -H "Authorization: token $GH_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number/merge"
+          merge_response=$(curl -s -X PUT -H "Authorization: token $GH_TOKEN" \
+            "https://api.github.com/repos/$REPO/pulls/$pr_number/merge")
+
+          # Verify merge success
+          merged=$(echo "$merge_response" | jq -r '.merged')
+          if [[ "$merged" != "true" ]]; then
+            echo "Merge failed: $merge_response"
+            exit 1
+          fi
 
           echo "PR merged successfully"
-
-      - name: Generate release tag and create release
-        if: env.changes == 'true'
-        run: |
-          set -euxo pipefail  # Enable error handling and debugging
-
-          # Get the latest release tag for both rTorrent and ruTorrent
-          rt_repo="stickz/rtorrent"
-          rt_release_response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$rt_repo/releases/latest")
-          echo "rTorrent release response: $rt_release_response"  # Debugging
-          rt_tag_name=$(echo "$rt_release_response" | jq -r '.tag_name')
-          
-          if [[ "$rt_tag_name" == "null" ]]; then
-            echo "Error fetching rTorrent release tag."
-            exit 1
-          fi
-      
-          ru_repo="Novik/ruTorrent"
-          ru_release_response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$ru_repo/releases/latest")
-          echo "ruTorrent release response: $ru_release_response"  # Debugging
-          ru_tag_name=$(echo "$ru_release_response" | jq -r '.tag_name')
-          
-          if [[ "$ru_tag_name" == "null" ]]; then
-            echo "Error fetching ruTorrent release tag."
-            exit 1
-          fi
-      
-          # Strip leading 'v' from tags and extract versions
-          rt_tag_name=${rt_tag_name#v}
-          ru_tag_name=${ru_tag_name#v}
-          rt_version=$(echo "$rt_tag_name" | grep -oP 'v?\K\d+\.\d+' || echo "0.0")
-          ru_version=$(echo "$ru_tag_name" | grep -oP 'v?\K\d+\.\d+' || echo "0.0")
-          echo "Extracted rTorrent version: $rt_version"
-          echo "Extracted ruTorrent version: $ru_version"
-      
-          # Determine the release number
-          release_num=$(git tag | grep -o 'r[0-9]*$' | sort -n | tail -1 | sed 's/r//' || echo 0)
-          new_release_num=$((release_num + 1))
-      
-          base_ru_version="$ru_version"
-          increment=0
-      
-          # Find unique tag name
-          while true; do
-            if [ $increment -eq 0 ]; then
-              ru_part="${base_ru_version}"
-            else
-              ru_part="${base_ru_version}_${increment}"
-            fi
-      
-            tag_name="${ru_part}-${rt_version}-r${new_release_num}"
-      
-            if ! git rev-parse "$tag_name" > /dev/null 2>&1; then
-              break
-            fi
-      
-            increment=$((increment + 1))
-          done
-      
-          # Create and push the tag
-          git tag $tag_name
-          git push origin $tag_name
-      
-          # Create release using GitHub CLI
-          gh release create $tag_name --title "Release $tag_name" --notes "Automatic release for updated components"
-      
-          echo "Release created with tag: $tag_name"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
