@@ -59,31 +59,59 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr create \
-            --title "Component version updates (${{ env.BRANCH_NAME }})" \
-            --body "Automatic updates from upstream repositories" \
-            --base main \
-            --head ${{ env.BRANCH_NAME }}
+          pr_response=$(curl -X POST -H "Authorization: token $GH_TOKEN" \
+            -d '{"title":"Automatically generated changes on ${{ env.BRANCH_NAME }}","body":"Automatic update of components from upstream","head":"${{ env.BRANCH_NAME }}","base":"main"}' \
+            "https://api.github.com/repos/${{ github.repository }}/pulls")
 
-          gh pr merge \
-            --admin \
-            --merge
+          pr_number=$(echo $pr_response | jq '.number')
 
-      - name: Create release
+          # Set PR to squash merge
+          curl -X PATCH -H "Authorization: token $GH_TOKEN" \
+            -d '{"merge_method":"squash"}' \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number"
+
+          # Merge PR
+          curl -X PUT -H "Authorization: token $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number/merge"
+
+          echo "PR merged successfully"
+
+      - name: Generate release tag and create release
         if: env.changes == 'true'
         run: |
-          rt_version=$(grep 'ARG RTORRENT_STICKZ_VERSION=' Dockerfile | cut -d'=' -f2 | cut -c1-7)
-          ru_version=$(grep '# Novik/ruTorrent' Dockerfile | awk '{print $3}')
+          # Get the latest release tag for both rTorrent and ruTorrent
+          rt_repo="stickz/rtorrent"
+          rt_release_response=$(curl -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$rt_repo/releases/latest")
+          rt_tag_name=$(echo $rt_release_response | jq -r '.tag_name')
+
+          ru_repo="Novik/ruTorrent"
+          ru_release_response=$(curl -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$ru_repo/releases/latest")
+          ru_tag_name=$(echo $ru_release_response | jq -r '.tag_name')
+
+          # Extract versions from the tag names
+          rt_version=$(echo $rt_tag_name | grep -oP '\d+\.\d+')
+          ru_version=$(echo $ru_tag_name | grep -oP '\d+\.\d+')
+
+          # Determine the release number
           release_num=$(git tag | grep -o 'r[0-9]*$' | sort -n | tail -1 | sed 's/r//' || echo 0)
           new_release_num=$((release_num + 1))
 
-          # Check for duplicate version names and update release number accordingly
-          tag_name="${ru_version}_${rt_version}-r${new_release_num}"
+          # Construct the tag name
+          tag_name="${ru_version}-${rt_version}-r${new_release_num}"
+
+          # Check if tag already exists and modify if necessary
           if git tag -l | grep -q "$tag_name"; then
-            # If the tag already exists, modify it with an incremented suffix
-            tag_name="${ru_version}_${rt_version}_$(($new_release_num + 1))-r${new_release_num}"
+            tag_name="${ru_version}_${rt_version}_r${new_release_num}"
           fi
+
+          # Create the tag and push
           git tag $tag_name
           git push origin $tag_name
+
+          # Create release with the new tag
+          gh release create $tag_name --title "Release $tag_name" --notes "Automatic release for updated components"
+
+          echo "Release created with tag: $tag_name"
+
 
 
