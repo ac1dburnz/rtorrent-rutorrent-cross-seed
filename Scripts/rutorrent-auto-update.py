@@ -1,52 +1,48 @@
 import requests
 import re
 import os
+import sys
 
 repo = "Novik/ruTorrent"
 
-# Get the latest release information
-releases_url = f"https://api.github.com/repos/{repo}/releases/latest"
-release_response = requests.get(releases_url)
-latest_release = release_response.json()
+try:
+    headers = {}
+    if 'GITHUB_TOKEN' in os.environ:
+        headers = {'Authorization': f'token {os.environ["GITHUB_TOKEN"]}'}
 
-# Extract the tag name and version number
-tag_name = latest_release["tag_name"]
-version = re.search(r'v(\d+\.\d+\.\d+)', tag_name).group(1)
+    # Get latest release
+    release_response = requests.get(f"https://api.github.com/repos/{repo}/releases/latest", headers=headers)
+    release_response.raise_for_status()
+    tag_name = release_response.json()["tag_name"]
+    
+    # Extract version (v5.2.0 -> 5.2)
+    version = re.search(r'v(\d+\.\d+)', tag_name).group(1)
 
-# Get the commit SHA associated with the latest release tag
-tags_url = f"https://api.github.com/repos/{repo}/git/refs/tags/{tag_name}"
-tag_response = requests.get(tags_url)
-tag_data = tag_response.json()
-latest_sha = tag_data["object"]["sha"]
+    # Get commit SHA for tag
+    tag_response = requests.get(f"https://api.github.com/repos/{repo}/git/ref/tags/{tag_name}", headers=headers)
+    tag_response.raise_for_status()
+    latest_sha = tag_response.json()["object"]["sha"][:7]
 
-print(f"Latest version: {version}")
-print(f"Latest commit SHA: {latest_sha}")
+    print(f"Latest ruTorrent version: {version}")
+    print(f"Associated commit SHA: {latest_sha}")
 
-# Update the Dockerfile
-base_dir = os.environ.get("BASE_DIR")
-dockerfile_path = os.path.join(base_dir, "rtorrent-rutorrent-cross-seed", "Dockerfile")
+    # Update Dockerfile
+    dockerfile_path = os.path.join(os.environ["BASE_DIR"], "Dockerfile")
+    
+    with open(dockerfile_path, "r") as f:
+        lines = f.readlines()
 
-with open(dockerfile_path, "r") as f:
-    lines = f.readlines()
+    for i, line in enumerate(lines):
+        if line.startswith("# Novik/ruTorrent"):
+            lines[i] = f'# Novik/ruTorrent {version}\n'
+        if line.startswith("ARG RUTORRENT_VERSION="):
+            lines[i] = f'ARG RUTORRENT_VERSION={latest_sha}\n'
 
-comment_line_index = None
-arg_line_index = None
+    with open(dockerfile_path, "w") as f:
+        f.writelines(lines)
 
-for i, line in enumerate(lines):
-    if line.startswith("# Novik/ruTorrent"):
-        comment_line_index = i
+    print("Dockerfile updated successfully")
 
-    if line.startswith("ARG RUTORRENT_VERSION="):
-        arg_line_index = i
-
-if comment_line_index is not None:
-    lines[comment_line_index] = f'# Novik/ruTorrent {version}\n'
-
-if arg_line_index is not None:
-    lines[arg_line_index] = f'ARG RUTORRENT_VERSION={latest_sha}\n'
-
-with open(dockerfile_path, "w") as f:
-    f.writelines(lines)
-
-print("Dockerfile updated")
-
+except Exception as e:
+    print(f"Error updating ruTorrent: {str(e)}")
+    sys.exit(1)
