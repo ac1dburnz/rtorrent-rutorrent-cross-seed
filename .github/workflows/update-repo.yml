@@ -71,6 +71,7 @@ jobs:
           
           gh pr merge \
             --admin \
+            --merge
             ${{ env.BRANCH_NAME }}
 
       - name: Create release
