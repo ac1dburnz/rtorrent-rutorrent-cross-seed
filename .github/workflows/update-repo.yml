@@ -60,6 +60,8 @@ jobs:
 
       - name: Create and merge PR
         if: steps.check-changes.outputs.changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr create \
             --title "Component version updates (${{ env.BRANCH_NAME }})" \
