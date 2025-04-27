@@ -37,17 +37,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_DIR: ${{ github.workspace }}
 
-      - name: Check for changes
+      - name: Check for Dockerfile changes
         id: check-changes
         run: |
-          if git diff --exit-code Dockerfile; then
-            echo "changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "changes=true" >> $GITHUB_OUTPUT
-          fi
+          git diff --exit-code Dockerfile
+          echo "changes=$(git diff --exit-code Dockerfile || echo 'true')" >> $GITHUB_ENV
 
       - name: Create update branch
-        if: steps.check-changes.outputs.changes == 'true'
+        if: env.changes == 'true'
         run: |
           branch_name="update-$(date +'%Y%m%d%H%M%S')"
           git config --global user.email "github-actions@users.noreply.github.com"
@@ -59,7 +56,7 @@ jobs:
           echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
 
       - name: Create and merge PR
-        if: steps.check-changes.outputs.changes == 'true'
+        if: env.changes == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -68,21 +65,25 @@ jobs:
             --body "Automatic updates from upstream repositories" \
             --base main \
             --head ${{ env.BRANCH_NAME }}
-      
-          gh pr merge --admin --merge ${{ env.BRANCH_NAME }}
 
-
-            
+          gh pr merge \
+            --admin \
+            --merge
 
       - name: Create release
-        if: steps.check-changes.outputs.changes == 'true'
+        if: env.changes == 'true'
         run: |
-          # Get versions from Dockerfile
           rt_version=$(grep 'ARG RTORRENT_STICKZ_VERSION=' Dockerfile | cut -d'=' -f2 | cut -c1-7)
           ru_version=$(grep '# Novik/ruTorrent' Dockerfile | awk '{print $3}')
           release_num=$(git tag | grep -o 'r[0-9]*$' | sort -n | tail -1 | sed 's/r//' || echo 0)
           new_release_num=$((release_num + 1))
 
+          # Check for duplicate version names and update release number accordingly
           tag_name="${ru_version}_${rt_version}-r${new_release_num}"
+          if git tag -l | grep -q "$tag_name"; then
+            # If the tag already exists, modify it with an incremented suffix
+            tag_name="${ru_version}_${rt_version}_$(($new_release_num + 1))-r${new_release_num}"
+          fi
           git tag $tag_name
           git push origin $tag_name
+
