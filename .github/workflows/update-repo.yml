@@ -76,55 +76,43 @@ jobs:
 
           echo "PR merged successfully"
 
-
-
-
+      
       - name: Create and merge PR
         if: env.changes == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH_NAME: ${{ env.BRANCH_NAME }}
           REPO: ${{ github.repository }}
         run: |
-          # Safely generate JSON payload using jq
-          pr_data=$(jq -n \
-            --arg title "Automatically generated changes on $BRANCH_NAME" \
-            --arg body "Automatic update of components from upstream" \
-            --arg head "$BRANCH_NAME" \
-            '{title: $title, body: $body, head: $head, base: "main"}')
-
+          set -euxo pipefail  # Exit on error
+      
+          # Verify branch exists
+          echo "Using branch: ${{ env.BRANCH_NAME }}"
+      
+          # Use manual JSON formatting (your working approach)
+          pr_data='{"title":"Automatically generated changes on '"${{ env.BRANCH_NAME }}"'","body":"Automatic update of components from upstream","head":"'"${{ env.BRANCH_NAME }}"'","base":"main"}'
+          echo "Payload: $pr_data"
+      
           # Create PR
           pr_response=$(curl -s -X POST -H "Authorization: token $GH_TOKEN" \
             -d "$pr_data" \
             "https://api.github.com/repos/$REPO/pulls")
-
-          # Check for errors
+      
+          # Error handling
           pr_error=$(echo "$pr_response" | jq -r '.message')
           if [[ "$pr_error" != "null" ]]; then
             echo "PR creation failed: $pr_error"
             exit 1
           fi
-
+      
           pr_number=$(echo "$pr_response" | jq -r '.number')
-          if [[ -z "$pr_number" ]]; then
-            echo "Failed to extract PR number"
-            exit 1
-          fi
-
-          # Enable squash merge
-          curl -X PATCH -H "Authorization: token $GH_TOKEN" \
-            -d '{"merge_method":"squash"}' \
-            "https://api.github.com/repos/$REPO/pulls/$pr_number"
-
+          echo "PR Number: $pr_number"
+      
           # Merge PR
           merge_response=$(curl -s -X PUT -H "Authorization: token $GH_TOKEN" \
             "https://api.github.com/repos/$REPO/pulls/$pr_number/merge")
-
-          # Verify merge success
+      
           merged=$(echo "$merge_response" | jq -r '.merged')
-          if [[ "$merged" != "true" ]]; then
-            echo "Merge failed: $merge_response"
-            exit 1
-          fi
-
+          [[ "$merged" == "true" ]] || { echo "Merge failed"; exit 1; }
           echo "PR merged successfully"
+
+   
