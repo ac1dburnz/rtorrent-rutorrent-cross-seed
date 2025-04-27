@@ -130,8 +130,73 @@ jobs:
 
           echo "✅ PR Merged Successfully"
 
-      - name: Generate release tag
+      - name: Generate release tag and create release
         if: env.changes == 'true'
         run: |
-          # Your existing tag generation logic
-          echo "Tag generation would go here"
+          set -euxo pipefail  # Enable strict error checking
+      
+          # Fetch all existing tags first
+          git fetch --tags --force
+      
+          # Configure git identity (required for tag creation)
+          git config --global user.email "github-actions@users.noreply.github.com"
+          git config --global user.name "GitHub Actions"
+      
+          # Get latest component versions
+          rt_repo="stickz/rtorrent"
+          rt_tag_name=$(curl -sLH "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$rt_repo/releases/latest" | jq -r '.tag_name | sub("^v";"")')
+          
+          ru_repo="Novik/ruTorrent" 
+          ru_tag_name=$(curl -sLH "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$ru_repo/releases/latest" | jq -r '.tag_name | sub("^v";"")')
+      
+          # Extract base versions more reliably
+          rt_version=$(echo "$rt_tag_name" | grep -Eo '[0-9]+\.[0-9]+')
+          ru_version=$(echo "$ru_tag_name" | grep -Eo '[0-9]+\.[0-9]+')
+      
+          # Get latest release counter
+          last_r_number=$(git tag | grep -Eo 'r[0-9]+$' | sort -V | tail -1 | tr -d 'r' || echo 0)
+          new_r_number=$((last_r_number + 1))
+      
+          # Generate unique tag
+          increment=0
+          max_attempts=5
+          while true; do
+            if [ $increment -eq 0 ]; then
+              tag_name="${ru_version}-${rt_version}-r${new_r_number}"
+            else
+              tag_name="${ru_version}.${increment}-${rt_version}-r${new_r_number}"
+            fi
+      
+            # Check if tag exists both locally and remotely
+            if ! git rev-parse "$tag_name" >/dev/null 2>&1 && \
+               ! gh api repos/$GITHUB_REPOSITORY/git/ref/tags/$tag_name >/dev/null 2>&1; then
+              break
+            fi
+      
+            echo "Tag $tag_name exists, trying next increment..."
+            increment=$((increment + 1))
+            
+            if [ $increment -gt $max_attempts ]; then
+              echo "❌ Failed to find unique tag after $max_attempts attempts"
+              exit 1
+            fi
+          done
+      
+          # Create and push tag
+          git tag $tag_name
+          git push origin $tag_name
+      
+          # Create release with detailed notes
+          release_notes="Component updates:
+          - rTorrent: $rt_tag_name
+          - ruTorrent: $ru_tag_name"
+          
+          gh release create $tag_name \
+            --title "Release $tag_name" \
+            --notes "$release_notes"
+      
+          echo "✅ Successfully created release $tag_name"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
