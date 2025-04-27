@@ -11,21 +11,8 @@ headers = {"Accept": "application/vnd.github.v3+json"}
 if token:
     headers["Authorization"] = f"token {token}"
 
-# Locate Dockerfile by walking up
-def find_dockerfile(start_dir):
-    current = start_dir
-    while True:
-        candidate = os.path.join(current, "Dockerfile")
-        if os.path.isfile(candidate):
-            return candidate
-        parent = os.path.dirname(current)
-        if parent == current:
-            break
-        current = parent
-    raise FileNotFoundError("Dockerfile not found in any parent directory.")
-
-script_dir = os.path.dirname(os.path.realpath(__file__))
-dockerfile_path = find_dockerfile(script_dir)
+# Always look relative to GITHUB_WORKSPACE
+dockerfile_path = os.path.join(os.getenv("GITHUB_WORKSPACE"), "Dockerfile")
 
 try:
     # Get latest release
