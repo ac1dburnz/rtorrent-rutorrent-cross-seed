@@ -1,35 +1,51 @@
-name: Update Repo Script
-
+name: Component Updates
 on:
   schedule:
-    - cron: '0 0 * * *' # Run daily at midnight UTC
-  workflow_dispatch: # Allow manual runs
+    - cron: '0 0 * * *'  # Daily at midnight UTC
+  workflow_dispatch:
 
 jobs:
-  run-update-script:
+  check-updates:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Check out the repository
-      - name: Checkout Code
+      - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      # Step 2: Configure Git User
-      - name: Configure Git User
-        run: |
-          git config --global user.email ${{ secrets.email }}
-          git config --global user.name ${{ secrets.name }}
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
-      # Step 3: Install Dependencies
-      - name: Install Dependencies
+      - name: Run version checks
+        id: versions
         run: |
-          sudo apt-get update
-          sudo apt-get install -y jq python3
+          python3 Scripts/rutorrent-auto-update.py
+          python3 Scripts/rtorrent-auto-update.py
+          echo "RU_VERSION=$(cat .ru_version)" >> $GITHUB_OUTPUT
+          echo "RT_VERSION=$(cat .rt_version)" >> $GITHUB_OUTPUT
+          echo "RELEASE_NUM=$(cat .release_num)" >> $GITHUB_OUTPUT
 
-      # Step 4: Run the Script
-      - name: Run Update Script
+      - name: Create update branch
+        if: ${{ steps.versions.outputs.RU_VERSION != '' || steps.versions.outputs.RT_VERSION != '' }}
         run: |
-          chmod +x ./Scripts/update-repo.sh
-          ./Scripts/update-repo.sh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git checkout -b update/${GITHUB_RUN_ID}
+          git add Dockerfile
+          git commit -m "Update components"
+          git push origin update/${GITHUB_RUN_ID}
+
+      - name: Merge updates
+        if: ${{ steps.versions.outputs.RU_VERSION != '' || steps.versions.outputs.RT_VERSION != '' }}
+        run: |
+          gh pr create --base main --head update/${GITHUB_RUN_ID} --title "Component updates" --body "Automatic dependency updates"
+          gh pr merge --squash --auto
+
+      - name: Create release
+        if: ${{ steps.versions.outputs.RU_VERSION != '' || steps.versions.outputs.RT_VERSION != '' }}
+        run: |
+          TAG_NAME="${{ steps.versions.outputs.RU_VERSION }}_${{ steps.versions.outputs.RT_VERSION }}-r${{ steps.versions.outputs.RELEASE_NUM }}"
+          gh release create $TAG_NAME --target main --title "$TAG_NAME" --notes "Component updates"
