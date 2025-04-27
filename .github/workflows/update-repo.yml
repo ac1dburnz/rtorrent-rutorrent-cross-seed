@@ -62,7 +62,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
-          set -euxo pipefail  # Exit on error
+          set -euxo pipefail
+
+          # Verify FILE differences between branches
+          if git diff --quiet origin/main..origin/${{ env.BRANCH_NAME }} -- Dockerfile ; then
+            echo "🛑 No Dockerfile changes between main and ${{ env.BRANCH_NAME }}"
+            exit 0  # Graceful exit
+          fi
+
+          # Rest of your existing PR creation code
+          pr_data='{"title":"Automatically generated changes on '"${{ env.BRANCH_NAME }}"'...'
+          # ...
       
           # Verify branch exists
           echo "Using branch: ${{ env.BRANCH_NAME }}"
