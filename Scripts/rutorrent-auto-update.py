@@ -16,12 +16,15 @@ try:
     tag_name = release_response.json()["tag_name"]
     
     # Extract version (v5.2.0 -> 5.2)
-    version = re.search(r'v(\d+\.\d+)', tag_name).group(1)
+    version_match = re.search(r'v(\d+\.\d+)', tag_name)
+    if not version_match:
+        raise ValueError(f"Invalid tag format: {tag_name}")
+    version = version_match.group(1)
 
     # Get commit SHA for tag
     tag_response = requests.get(f"https://api.github.com/repos/{repo}/git/ref/tags/{tag_name}", headers=headers)
     tag_response.raise_for_status()
-    latest_sha = tag_response.json()["object"]["sha"][:7]
+    latest_sha = tag_response.json()["object"]["sha"]  # Full SHA
 
     print(f"Latest ruTorrent version: {version}")
     print(f"Associated commit SHA: {latest_sha}")
@@ -36,7 +39,7 @@ try:
         if line.startswith("# Novik/ruTorrent"):
             lines[i] = f'# Novik/ruTorrent {version}\n'
         if line.startswith("ARG RUTORRENT_VERSION="):
-            lines[i] = f'ARG RUTORRENT_VERSION={latest_sha}\n'
+            lines[i] = f'ARG RUTORRENT_VERSION={latest_sha}\n'  # Full SHA
 
     with open(dockerfile_path, "w") as f:
         f.writelines(lines)
