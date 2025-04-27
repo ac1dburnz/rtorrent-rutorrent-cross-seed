@@ -102,33 +102,34 @@ jobs:
         run: |
           set -euxo pipefail  # Exit on error
       
-          # Verify branch exists
-          echo "Using branch: ${{ env.BRANCH_NAME }}"
+          # Verify branch actually differs from main
+          git fetch origin main
+          MAIN_SHA=$(git rev-parse origin/main)
+          BRANCH_SHA=$(git rev-parse origin/${{ env.BRANCH_NAME }})
       
-          # Use manual JSON formatting (your working approach)
+          if [[ "$MAIN_SHA" == "$BRANCH_SHA" ]]; then
+            echo "🛑 Branch ${{ env.BRANCH_NAME }} identical to main - aborting PR creation"
+            exit 0  # Graceful exit since no changes exist
+          fi
+      
+          # Create PR (your existing code)
           pr_data='{"title":"Automatically generated changes on '"${{ env.BRANCH_NAME }}"'","body":"Automatic update of components from upstream","head":"'"${{ env.BRANCH_NAME }}"'","base":"main"}'
-          echo "Payload: $pr_data"
-      
-          # Create PR
           pr_response=$(curl -s -X POST -H "Authorization: token $GH_TOKEN" \
             -d "$pr_data" \
             "https://api.github.com/repos/$REPO/pulls")
       
-          # Error handling
+          # Existing error handling
           pr_error=$(echo "$pr_response" | jq -r '.message')
           if [[ "$pr_error" != "null" ]]; then
             echo "PR creation failed: $pr_error"
             exit 1
           fi
       
+          # Existing merge code
           pr_number=$(echo "$pr_response" | jq -r '.number')
-          echo "PR Number: $pr_number"
-      
-          # Merge PR
           merge_response=$(curl -s -X PUT -H "Authorization: token $GH_TOKEN" \
             "https://api.github.com/repos/$REPO/pulls/$pr_number/merge")
       
           merged=$(echo "$merge_response" | jq -r '.merged')
           [[ "$merged" == "true" ]] || { echo "Merge failed"; exit 1; }
           echo "PR merged successfully"
-    
