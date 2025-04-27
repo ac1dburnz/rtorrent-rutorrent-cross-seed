@@ -1,7 +1,8 @@
 name: Component Updates
+
 on:
   schedule:
-    - cron: '0 0 * * *'  # Daily at midnight UTC
+    - cron: '0 0 * * *' # Daily at midnight UTC
   workflow_dispatch:
 
 jobs:
@@ -50,39 +51,60 @@ jobs:
         if: steps.check-changes.outputs.changes == 'true'
         run: |
           branch_name="update-$(date +'%Y%m%d%H%M%S')"
+          echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
           git config --global user.email "github-actions@users.noreply.github.com"
           git config --global user.name "GitHub Actions"
           git checkout -b $branch_name
           git add Dockerfile
           git commit -m "Update component versions"
           git push origin $branch_name
-          echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
 
       - name: Create and merge PR
         if: steps.check-changes.outputs.changes == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr create \
-            --title "Component version updates (${{ env.BRANCH_NAME }})" \
-            --body "Automatic updates from upstream repositories" \
-            --base main \
-            --head ${{ env.BRANCH_NAME }}
-      
+          gh pr create --title "Component version updates (${{ env.BRANCH_NAME }})" \
+                       --body "Automatic updates from upstream repositories" \
+                       --base main \
+                       --head ${{ env.BRANCH_NAME }}
           gh pr merge --admin --merge ${{ env.BRANCH_NAME }}
-
-
-            
 
       - name: Create release
         if: steps.check-changes.outputs.changes == 'true'
         run: |
-          # Get versions from Dockerfile
-          rt_version=$(grep 'ARG RTORRENT_STICKZ_VERSION=' Dockerfile | cut -d'=' -f2 | cut -c1-7)
-          ru_version=$(grep '# Novik/ruTorrent' Dockerfile | awk '{print $3}')
-          release_num=$(git tag | grep -o 'r[0-9]*$' | sort -n | tail -1 | sed 's/r//' || echo 0)
-          new_release_num=$((release_num + 1))
+          # Extract versions properly
+          rt_version=$(grep 'ARG RTORRENT_STICKZ_VERSION=' Dockerfile | cut -d'=' -f2 | tr -d '"')
+          ru_version=$(grep '# Novik/ruTorrent' Dockerfile | awk '{print $3}' | tr -d '"')
 
-          tag_name="${ru_version}_${rt_version}-r${new_release_num}"
-          git tag $tag_name
-          git push origin $tag_name
+          suffix=""
+          release_num=0
+
+          generate_tag() {
+            echo "${ru_version}${suffix}-${rt_version}-r${release_num}"
+          }
+
+          # Find available tag
+          while git fetch --tags && git tag | grep -q "^$(generate_tag)$"; do
+            if [ -z "$suffix" ]; then
+              suffix="_1"
+            else
+              suffix_num=$(echo "$suffix" | cut -d'_' -f2)
+              suffix_num=$((suffix_num + 1))
+              suffix="_${suffix_num}"
+            fi
+          done
+
+          tag_name=$(generate_tag)
+
+          echo "Creating and pushing tag: $tag_name"
+          git config --global user.email "github-actions@users.noreply.github.com"
+          git config --global user.name "GitHub Actions"
+
+          git tag "$tag_name"
+          git push origin "$tag_name"
+
+          echo "Creating GitHub release: $tag_name"
+          gh release create "$tag_name" --title "$tag_name" --notes "Automatic component update release."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
