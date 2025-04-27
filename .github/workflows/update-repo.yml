@@ -105,8 +105,11 @@ jobs:
           # Strip leading 'v' from tags and extract versions
           rt_tag_name=${rt_tag_name#v}
           ru_tag_name=${ru_tag_name#v}
-          rt_version=$(echo "$rt_tag_name" | grep -oP '^\d+\.\d+')
-          ru_version=$(echo "$ru_tag_name" | grep -oP '^\d+\.\d+')
+          rt_version=$(echo "$rt_tag_name" | grep -oP 'v?\K\d+\.\d+' || echo "0.0")
+          ru_version=$(echo "$ru_tag_name" | grep -oP 'v?\K\d+\.\d+' || echo "0.0")
+          # Add debugging
+          echo "Extracted rTorrent version: $rt_version"
+          echo "Extracted ruTorrent version: $ru_version"
       
           # Determine the release number
           release_num=$(git tag | grep -o 'r[0-9]*$' | sort -n | tail -1 | sed 's/r//' || echo 0)
@@ -139,5 +142,7 @@ jobs:
       
           # Create release with the new tag
           gh release create $tag_name --title "Release $tag_name" --notes "Automatic release for updated components"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
           echo "Release created with tag: $tag_name"
