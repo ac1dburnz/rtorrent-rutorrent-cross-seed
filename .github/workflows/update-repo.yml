@@ -1,35 +1,88 @@
-name: Update Repo Script
-
+name: Component Updates
 on:
   schedule:
-    - cron: '0 0 * * *' # Run daily at midnight UTC
-  workflow_dispatch: # Allow manual runs
+    - cron: '0 0 * * *'  # Daily at midnight UTC
+  workflow_dispatch:
 
 jobs:
-  run-update-script:
+  component-updates:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Check out the repository
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      # Step 2: Configure Git User
-      - name: Configure Git User
-        run: |
-          git config --global user.email ${{ secrets.email }}
-          git config --global user.name ${{ secrets.name }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
-      # Step 3: Install Dependencies
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq python3
+          sudo apt-get install -y jq
+          pip install requests
 
-      # Step 4: Run the Script
-      - name: Run Update Script
-        run: |
-          chmod +x ./Scripts/update-repo.sh
-          ./Scripts/update-repo.sh
+      - name: Run rTorrent update
+        run: python3 Scripts/rtorrent-auto-update.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_DIR: ${{ github.workspace }}
+
+      - name: Run ruTorrent update
+        run: python3 Scripts/rutorrent-auto-update.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_DIR: ${{ github.workspace }}
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          if git diff --exit-code Dockerfile; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create update branch
+        if: steps.check-changes.outputs.changes == 'true'
+        run: |
+          branch_name="update-$(date +'%Y%m%d%H%M%S')"
+          git config --global user.email "github-actions@users.noreply.github.com"
+          git config --global user.name "GitHub Actions"
+          git checkout -b $branch_name
+          git add Dockerfile
+          git commit -m "Update component versions"
+          git push origin $branch_name
+          echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
+
+      - name: Create and merge PR
+        if: steps.check-changes.outputs.changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --title "Component version updates (${{ env.BRANCH_NAME }})" \
+            --body "Automatic updates from upstream repositories" \
+            --base main \
+            --head ${{ env.BRANCH_NAME }}
+          
+          gh pr merge \
+            --admin \
+            --merge
+            ${{ env.BRANCH_NAME }}
+
+      - name: Create release
+        if: steps.check-changes.outputs.changes == 'true'
+        run: |
+          # Get versions from Dockerfile
+          rt_version=$(grep 'ARG RTORRENT_STICKZ_VERSION=' Dockerfile | cut -d'=' -f2 | cut -c1-7)
+          ru_version=$(grep '# Novik/ruTorrent' Dockerfile | awk '{print $3}')
+          release_num=$(git tag | grep -o 'r[0-9]*$' | sort -n | tail -1 | sed 's/r//' || echo 0)
+          new_release_num=$((release_num + 1))
+
+          tag_name="${ru_version}_${rt_version}-r${new_release_num}"
+          git tag $tag_name
+          git push origin $tag_name
