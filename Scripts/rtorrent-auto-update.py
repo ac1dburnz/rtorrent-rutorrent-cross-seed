@@ -10,16 +10,23 @@ try:
     if 'GITHUB_TOKEN' in os.environ:
         headers = {'Authorization': f'token {os.environ["GITHUB_TOKEN"]}'}
 
-    # Get latest commit
-    commits_response = requests.get(f"https://api.github.com/repos/{repo}/commits", headers=headers)
-    commits_response.raise_for_status()
-    latest_sha = commits_response.json()[0]["sha"]  # Keep full SHA
-
-    # Get latest release
-    release_response = requests.get(f"https://api.github.com/repos/{repo}/releases/latest", headers=headers)
+    # Get the LATEST RELEASE (not just latest commit)
+    release_response = requests.get(
+        f"https://api.github.com/repos/{repo}/releases/latest",
+        headers=headers
+    )
     release_response.raise_for_status()
-    tag_name = release_response.json().get("tag_name", "")
+    release_data = release_response.json()
     
+    # Get commit SHA from the release tag
+    tag_name = release_data["tag_name"]
+    tag_response = requests.get(
+        f"https://api.github.com/repos/{repo}/git/ref/tags/{tag_name}",
+        headers=headers
+    )
+    tag_response.raise_for_status()
+    latest_sha = tag_response.json()["object"]["sha"]  # Full 40-character SHA
+
     # Extract version from tag (v7.2-0.9.8-0.13.8 -> 7.2)
     version_match = re.search(r'v(\d+\.\d+)', tag_name)
     if not version_match:
@@ -27,7 +34,7 @@ try:
     version = version_match.group(1)
 
     print(f"Latest rTorrent version: {version}")
-    print(f"Latest commit SHA: {latest_sha}")
+    print(f"Release commit SHA: {latest_sha}")
 
     # Update Dockerfile
     dockerfile_path = os.path.join(os.environ["BASE_DIR"], "Dockerfile")
@@ -39,7 +46,7 @@ try:
         if line.startswith("# rTorrent stickz"):
             lines[i] = f'# rTorrent stickz {version}\n'
         if line.startswith("ARG RTORRENT_STICKZ_VERSION="):
-            lines[i] = f'ARG RTORRENT_STICKZ_VERSION={latest_sha}\n'  # Full SHA
+            lines[i] = f'ARG RTORRENT_STICKZ_VERSION={latest_sha}\n'
 
     with open(dockerfile_path, "w") as f:
         f.writelines(lines)
@@ -49,5 +56,4 @@ try:
 except Exception as e:
     print(f"Error updating rTorrent: {str(e)}")
     sys.exit(1)
-
 
