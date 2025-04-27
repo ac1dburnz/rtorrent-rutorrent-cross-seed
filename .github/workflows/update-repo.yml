@@ -54,27 +54,47 @@ jobs:
           git push origin $branch_name
           echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
 
+
+      
       - name: Create and merge PR
         if: env.changes == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
-          pr_response=$(curl -X POST -H "Authorization: token $GH_TOKEN" \
-            -d '{"title":"Automatically generated changes on ${{ env.BRANCH_NAME }}","body":"Automatic update of components from upstream","head":"${{ env.BRANCH_NAME }}","base":"main"}' \
-            "https://api.github.com/repos/${{ github.repository }}/pulls")
-
-          pr_number=$(echo $pr_response | jq '.number')
-
-          # Set PR to squash merge
-          curl -X PATCH -H "Authorization: token $GH_TOKEN" \
-            -d '{"merge_method":"squash"}' \
-            "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number"
-
+          set -euxo pipefail  # Exit on error
+      
+          # Verify branch exists
+          echo "Using branch: ${{ env.BRANCH_NAME }}"
+      
+          # Use manual JSON formatting (your working approach)
+          pr_data='{"title":"Automatically generated changes on '"${{ env.BRANCH_NAME }}"'","body":"Automatic update of components from upstream","head":"'"${{ env.BRANCH_NAME }}"'","base":"main"}'
+          echo "Payload: $pr_data"
+      
+          # Create PR
+          pr_response=$(curl -s -X POST -H "Authorization: token $GH_TOKEN" \
+            -d "$pr_data" \
+            "https://api.github.com/repos/$REPO/pulls")
+      
+          # Error handling
+          pr_error=$(echo "$pr_response" | jq -r '.message')
+          if [[ "$pr_error" != "null" ]]; then
+            echo "PR creation failed: $pr_error"
+            exit 1
+          fi
+      
+          pr_number=$(echo "$pr_response" | jq -r '.number')
+          echo "PR Number: $pr_number"
+      
           # Merge PR
-          curl -X PUT -H "Authorization: token $GH_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number/merge"
-
+          merge_response=$(curl -s -X PUT -H "Authorization: token $GH_TOKEN" \
+            "https://api.github.com/repos/$REPO/pulls/$pr_number/merge")
+      
+          merged=$(echo "$merge_response" | jq -r '.merged')
+          [[ "$merged" == "true" ]] || { echo "Merge failed"; exit 1; }
           echo "PR merged successfully"
+
+    
 
       - name: Generate release tag and create release
         if: env.changes == 'true'
@@ -146,3 +166,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
           echo "Release created with tag: $tag_name"
+
+
+
