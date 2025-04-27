@@ -54,20 +54,33 @@ jobs:
       - name: Create update branch
         if: env.changes == 'true'
         run: |
-          # Verify changes are actually staged
+          # Explicitly stage Dockerfile changes
+          git add Dockerfile
+          
+          # Debug staging status
+          echo "=== Staged Changes ==="
+          git diff --cached Dockerfile || true
+          
+          # Verify staging
           if [[ -z $(git diff --cached Dockerfile) ]]; then
-            echo "🛑 CRITICAL: No changes staged for commit!"
+            echo "🛑 No changes staged! Debug info:"
+            echo "=== Working Directory Changes ==="
+            git diff Dockerfile || true
+            echo "=== Git Status ==="
+            git status
             exit 1
           fi
-
+      
           branch_name="update-$(date +'%Y%m%d%H%M%S')"
           git config --global user.email "github-actions@users.noreply.github.com"
           git config --global user.name "GitHub Actions"
           git checkout -b $branch_name
           git commit -m "Update component versions"
           
-          # Force push to ensure branch exists
-          git push -f origin $branch_name
+          echo "=== Commit Details ==="
+          git show --stat
+          
+          git push origin $branch_name
           echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
 
       - name: Create and merge PR
