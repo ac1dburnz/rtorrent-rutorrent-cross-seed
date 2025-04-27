@@ -25,6 +25,10 @@ jobs:
           sudo apt-get install -y jq
           pip install requests
 
+      # Install GitHub CLI
+      - name: Setup GitHub CLI
+        uses: actions/setup-gh-cli@v1
+
       - name: Run rTorrent update
         run: python3 Scripts/rtorrent-auto-update.py
         env:
@@ -79,13 +83,14 @@ jobs:
       - name: Generate release tag and create release
         if: env.changes == 'true'
         run: |
+          set -euxo pipefail  # Enable error handling and debugging
+
           # Get the latest release tag for both rTorrent and ruTorrent
           rt_repo="stickz/rtorrent"
           rt_release_response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$rt_repo/releases/latest")
           echo "rTorrent release response: $rt_release_response"  # Debugging
           rt_tag_name=$(echo "$rt_release_response" | jq -r '.tag_name')
           
-          # Check for errors in the response
           if [[ "$rt_tag_name" == "null" ]]; then
             echo "Error fetching rTorrent release tag."
             exit 1
@@ -96,7 +101,6 @@ jobs:
           echo "ruTorrent release response: $ru_release_response"  # Debugging
           ru_tag_name=$(echo "$ru_release_response" | jq -r '.tag_name')
           
-          # Check for errors in the response
           if [[ "$ru_tag_name" == "null" ]]; then
             echo "Error fetching ruTorrent release tag."
             exit 1
@@ -107,7 +111,6 @@ jobs:
           ru_tag_name=${ru_tag_name#v}
           rt_version=$(echo "$rt_tag_name" | grep -oP 'v?\K\d+\.\d+' || echo "0.0")
           ru_version=$(echo "$ru_tag_name" | grep -oP 'v?\K\d+\.\d+' || echo "0.0")
-          # Add debugging
           echo "Extracted rTorrent version: $rt_version"
           echo "Extracted ruTorrent version: $ru_version"
       
@@ -115,11 +118,10 @@ jobs:
           release_num=$(git tag | grep -o 'r[0-9]*$' | sort -n | tail -1 | sed 's/r//' || echo 0)
           new_release_num=$((release_num + 1))
       
-          # Base ru_version without increment
           base_ru_version="$ru_version"
           increment=0
       
-          # Find a unique tag name by incrementing the ru_version part if necessary
+          # Find unique tag name
           while true; do
             if [ $increment -eq 0 ]; then
               ru_part="${base_ru_version}"
@@ -129,20 +131,20 @@ jobs:
       
             tag_name="${ru_part}-${rt_version}-r${new_release_num}"
       
-            if ! git tag | grep -q "^${tag_name}$"; then
+            if ! git rev-parse "$tag_name" > /dev/null 2>&1; then
               break
             fi
       
             increment=$((increment + 1))
           done
       
-          # Create the tag and push
+          # Create and push the tag
           git tag $tag_name
           git push origin $tag_name
       
-          # Create release with the new tag
+          # Create release using GitHub CLI
           gh release create $tag_name --title "Release $tag_name" --notes "Automatic release for updated components"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
           echo "Release created with tag: $tag_name"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
