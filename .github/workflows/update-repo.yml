@@ -71,8 +71,6 @@ jobs:
           
           gh pr merge \
             --admin \
-            --squash \
-            --auto \
             ${{ env.BRANCH_NAME }}
 
       - name: Create release
