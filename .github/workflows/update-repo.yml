@@ -12,6 +12,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: List workspace
+        run: |
+          echo "Listing workspace:"
+          ls -R $GITHUB_WORKSPACE
+          
       - name: Set up Git user
         run: |
           git config --global user.email "github-actions-bot@users.noreply.github.com"
