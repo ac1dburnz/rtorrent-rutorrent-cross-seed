@@ -1,48 +1,44 @@
 import requests
 import re
 import os
+import sys
 
-repo = "Novik/ruTorrent"
-try:
-    token = os.environ.get('GITHUB_TOKEN')
-    headers = {'Authorization': f'token {token}'} if token else {}
+REPO = "Novik/ruTorrent"
+DOCKERFILE_PATH = "Dockerfile"
 
-    # Get latest release
-    releases_url = f"https://api.github.com/repos/{repo}/releases/latest"
-    release_response = requests.get(releases_url, headers=headers)
-    release_response.raise_for_status()
-    latest_release = release_response.json()
-    
-    tag_name = latest_release["tag_name"]
-    version = re.search(r'v(\d+\.\d+\.\d+)', tag_name).group(1)
+def main():
+    try:
+        headers = {"Authorization": f"token {os.environ['GITHUB_TOKEN']}"} if 'GITHUB_TOKEN' in os.environ else {}
+        
+        # Get latest release
+        release = requests.get(f"https://api.github.com/repos/{REPO}/releases/latest", headers=headers).json()
+        tag_name = release['tag_name']
+        version = re.search(r'v(\d+\.\d+\.\d+)', tag_name).group(1)
+        
+        # Get commit SHA for the tag
+        tag_ref = requests.get(f"https://api.github.com/repos/{REPO}/git/ref/tags/{tag_name}", headers=headers).json()
+        commit_sha = tag_ref['object']['sha'][:7]
 
-    # Get commit SHA
-    tags_url = f"https://api.github.com/repos/{repo}/git/refs/tags/{tag_name}"
-    tag_response = requests.get(tags_url, headers=headers)
-    tag_response.raise_for_status()
-    latest_sha = tag_response.json()["object"]["sha"]
+        # Update Dockerfile
+        with open(DOCKERFILE_PATH, 'r') as f:
+            content = f.read()
 
-    print(f"Latest version: {version}")
-    print(f"Latest commit SHA: {latest_sha}")
+        new_content = re.sub(
+            r'(ARG RUTORRENT_VERSION=).+',
+            f'\\g<1>{commit_sha}  # Version: {version}',
+            content
+        )
 
-    # Update Dockerfile
-    base_dir = os.environ.get("BASE_DIR")
-    dockerfile_path = os.path.join(base_dir, "Dockerfile")  # Corrected path
+        if content != new_content:
+            with open(DOCKERFILE_PATH, 'w') as f:
+                f.write(new_content)
+            print("Updated ruTorrent version")
+        else:
+            print("No ruTorrent updates found")
 
-    with open(dockerfile_path, "r") as f:
-        lines = f.readlines()
+    except Exception as e:
+        print(f"Error checking ruTorrent: {str(e)}")
+        sys.exit(1)
 
-    for i, line in enumerate(lines):
-        if line.startswith("# Novik/ruTorrent"):
-            lines[i] = f'# Novik/ruTorrent {version}\n'
-        if line.startswith("ARG RUTORRENT_VERSION="):
-            lines[i] = f'ARG RUTORRENT_VERSION={latest_sha}\n'
-
-    with open(dockerfile_path, "w") as f:
-        f.writelines(lines)
-
-    print("Successfully updated Dockerfile")
-
-except Exception as e:
-    print(f"Error: {str(e)}")
-    exit(1)
+if __name__ == "__main__":
+    main()
