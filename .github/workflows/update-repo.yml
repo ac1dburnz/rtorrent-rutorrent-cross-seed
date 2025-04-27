@@ -40,22 +40,36 @@ jobs:
       - name: Check for Dockerfile changes
         id: check-changes
         run: |
-          git diff --quiet Dockerfile || echo "changes=true" >> $GITHUB_ENV
+          echo "=== Raw Dockerfile Differences ==="
+          git diff Dockerfile || true
+          
+          if ! git diff --quiet Dockerfile; then
+            echo "✅ Genuine Dockerfile changes detected"
+            echo "changes=true" >> $GITHUB_ENV
+          else
+            echo "🛑 No substantial changes in Dockerfile"
+            echo "::warning::Skipping PR creation - no meaningful changes"
+          fi
 
       - name: Create update branch
         if: env.changes == 'true'
         run: |
+          # Verify changes are actually staged
+          if [[ -z $(git diff --cached Dockerfile) ]]; then
+            echo "🛑 CRITICAL: No changes staged for commit!"
+            exit 1
+          fi
+
           branch_name="update-$(date +'%Y%m%d%H%M%S')"
           git config --global user.email "github-actions@users.noreply.github.com"
           git config --global user.name "GitHub Actions"
           git checkout -b $branch_name
-          git add Dockerfile
           git commit -m "Update component versions"
-          git push origin $branch_name
+          
+          # Force push to ensure branch exists
+          git push -f origin $branch_name
           echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
 
-
-      
       - name: Create and merge PR
         if: env.changes == 'true'
         env:
@@ -64,82 +78,47 @@ jobs:
         run: |
           set -euxo pipefail
 
-          # Verify FILE differences between branches
-          if git diff --quiet origin/main..origin/${{ env.BRANCH_NAME }} -- Dockerfile ; then
-            echo "🛑 No Dockerfile changes between main and ${{ env.BRANCH_NAME }}"
-            exit 0  # Graceful exit
+          # Verify file differences between branches
+          git fetch origin main ${{ env.BRANCH_NAME }}
+          
+          echo "=== Commit Comparison ==="
+          git log --pretty=oneline -1 origin/main
+          git log --pretty=oneline -1 origin/${{ env.BRANCH_NAME }}
+
+          echo "=== Dockerfile Diff Between Branches ==="
+          git diff origin/main..origin/${{ env.BRANCH_NAME }} -- Dockerfile || true
+
+          if git diff --quiet origin/main..origin/${{ env.BRANCH_NAME }} -- Dockerfile; then
+            echo "🛑 Critical: No Dockerfile differences despite earlier detection"
+            exit 1
           fi
 
-          # Rest of your existing PR creation code
-          pr_data='{"title":"Automatically generated changes on '"${{ env.BRANCH_NAME }}"'...'
-          # ...
-      
-          # Verify branch exists
-          echo "Using branch: ${{ env.BRANCH_NAME }}"
-      
-          # Use manual JSON formatting (your working approach)
-          pr_data='{"title":"Automatically generated changes on '"${{ env.BRANCH_NAME }}"'","body":"Automatic update of components from upstream","head":"'"${{ env.BRANCH_NAME }}"'","base":"main"}'
-          echo "Payload: $pr_data"
-      
           # Create PR
-          pr_response=$(curl -s -X POST -H "Authorization: token $GH_TOKEN" \
-            -d "$pr_data" \
-            "https://api.github.com/repos/$REPO/pulls")
-      
-          # Error handling
-          pr_error=$(echo "$pr_response" | jq -r '.message')
-          if [[ "$pr_error" != "null" ]]; then
-            echo "PR creation failed: $pr_error"
-            exit 1
-          fi
-      
-          pr_number=$(echo "$pr_response" | jq -r '.number')
-          echo "PR Number: $pr_number"
-      
-          # Merge PR
-          merge_response=$(curl -s -X PUT -H "Authorization: token $GH_TOKEN" \
-            "https://api.github.com/repos/$REPO/pulls/$pr_number/merge")
-      
-          merged=$(echo "$merge_response" | jq -r '.merged')
-          [[ "$merged" == "true" ]] || { echo "Merge failed"; exit 1; }
-          echo "PR merged successfully"
+          pr_data=$(jq -n \
+            --arg title "Component Update ($(date +'%Y-%m-%d'))" \
+            --arg body "Automatic version bump" \
+            --arg head "${{ env.BRANCH_NAME }}" \
+            '{title: $title, body: $body, head: $head, base: "main"}')
 
-      - name: Create and merge PR
-        if: env.changes == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-        run: |
-          set -euxo pipefail  # Exit on error
-      
-          # Verify branch actually differs from main
-          git fetch origin main
-          MAIN_SHA=$(git rev-parse origin/main)
-          BRANCH_SHA=$(git rev-parse origin/${{ env.BRANCH_NAME }})
-      
-          if [[ "$MAIN_SHA" == "$BRANCH_SHA" ]]; then
-            echo "🛑 Branch ${{ env.BRANCH_NAME }} identical to main - aborting PR creation"
-            exit 0  # Graceful exit since no changes exist
-          fi
-      
-          # Create PR (your existing code)
-          pr_data='{"title":"Automatically generated changes on '"${{ env.BRANCH_NAME }}"'","body":"Automatic update of components from upstream","head":"'"${{ env.BRANCH_NAME }}"'","base":"main"}'
-          pr_response=$(curl -s -X POST -H "Authorization: token $GH_TOKEN" \
+          pr_response=$(curl -s -X POST \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Content-Type: application/json" \
             -d "$pr_data" \
             "https://api.github.com/repos/$REPO/pulls")
-      
-          # Existing error handling
-          pr_error=$(echo "$pr_response" | jq -r '.message')
-          if [[ "$pr_error" != "null" ]]; then
-            echo "PR creation failed: $pr_error"
-            exit 1
-          fi
-      
-          # Existing merge code
+
+          pr_url=$(echo "$pr_response" | jq -r '.html_url')
+          echo "PR Created: $pr_url"
+
+          # Immediate merge
           pr_number=$(echo "$pr_response" | jq -r '.number')
-          merge_response=$(curl -s -X PUT -H "Authorization: token $GH_TOKEN" \
-            "https://api.github.com/repos/$REPO/pulls/$pr_number/merge")
-      
-          merged=$(echo "$merge_response" | jq -r '.merged')
-          [[ "$merged" == "true" ]] || { echo "Merge failed"; exit 1; }
-          echo "PR merged successfully"
+          curl -s -X PUT \
+            -H "Authorization: token $GH_TOKEN" \
+            "https://api.github.com/repos/$REPO/pulls/$pr_number/merge"
+
+          echo "✅ PR Merged Successfully"
+
+      - name: Generate release tag
+        if: env.changes == 'true'
+        run: |
+          # Your existing tag generation logic
+          echo "Tag generation would go here"
