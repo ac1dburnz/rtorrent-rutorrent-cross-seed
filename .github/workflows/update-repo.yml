@@ -149,29 +149,27 @@ jobs:
           ru_tag_name=$(curl -sLH "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/$ru_repo/releases/latest" | jq -r '.tag_name | sub("^v";"")')
       
-          # Extract clean versions
+          # Extract clean versions with periods preserved
           rt_version=$(echo "$rt_tag_name" | grep -Eo '^[0-9]+\.[0-9]+' | head -1)
           ru_version=$(echo "$ru_tag_name" | grep -Eo '^[0-9]+\.[0-9]+')
       
-          # Get release counter
-          last_r_number=$(git tag | grep -Eo '-r[0-9]+$' | sort -V | tail -1 | tr -d '-r' || echo 0)
+          # Get release counter (fixed regex and tr command)
+          last_r_number=$(git tag | grep -Eo '\-r[0-9]+$' | sort -V | tail -1 | tr -d '\-r' || echo 0)
           new_r_number=$((last_r_number + 1))
       
           # Generate unique tag with correct format
           increment=0
           while true; do
             if [ $increment -eq 0 ]; then
-              # Initial format: 5.2_7.2-r0
               tag_name="${ru_version}_${rt_version}-r${new_r_number}"
             else
-              # Retry format: 5.2_1-7.2-r0
               tag_name="${ru_version}_${increment}-${rt_version}-r${new_r_number}"
             fi
       
-            # Clean and validate
-            clean_tag=$(echo "$tag_name" | tr -cd '[:alnum:]_-' | sed 's/_+/_/g')
+            # Clean while preserving periods and valid separators
+            clean_tag=$(echo "$tag_name" | tr -cd '[:alnum:]_.-' | sed 's/[-_]$//')
             
-            # Check existence
+            # Check existence both locally and remotely
             if ! git rev-parse "$clean_tag" >/dev/null 2>&1 && \
                ! gh api repos/$GITHUB_REPOSITORY/git/ref/tags/$clean_tag >/dev/null 2>&1; then
               break
@@ -182,11 +180,11 @@ jobs:
             [ $increment -gt 5 ] && { echo "❌ Max attempts reached"; exit 1; }
           done
       
-          # Create and push tag
+          # Create and push tag (using cleaned version)
           git tag "$clean_tag"
-          git push origin "$clean_tag"
+          git push origin "refs/tags/$clean_tag"
       
-          # Create release
+          # Create release with proper tag reference
           gh release create "$clean_tag" \
             --title "Release $clean_tag" \
             --notes "Component versions:
@@ -196,3 +194,4 @@ jobs:
           echo "✅ Created release: $clean_tag"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
