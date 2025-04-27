@@ -143,34 +143,35 @@ jobs:
           # Get component versions
           rt_repo="stickz/rtorrent"
           rt_tag_name=$(curl -sLH "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/$rt_repo/releases/latest" | jq -r '.tag_name')
+            "https://api.github.com/repos/$rt_repo/releases/latest" | jq -r '.tag_name | sub("^v";"")')
           
           ru_repo="Novik/ruTorrent"
           ru_tag_name=$(curl -sLH "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/$ru_repo/releases/latest" | jq -r '.tag_name')
+            "https://api.github.com/repos/$ru_repo/releases/latest" | jq -r '.tag_name | sub("^v";"")')
       
           # Extract clean versions
-          rt_version=$(echo "$rt_tag_name" | grep -Eo '([0-9]+\.){1}[0-9]+' | head -1)
+          rt_version=$(echo "$rt_tag_name" | grep -Eo '^[0-9]+\.[0-9]+' | head -1)
           ru_version=$(echo "$ru_tag_name" | grep -Eo '^[0-9]+\.[0-9]+')
       
           # Get release counter
-          last_r_number=$(git tag | grep -Eo 'r[0-9]+$' | sort -V | tail -1 | tr -d 'r' || echo 0)
+          last_r_number=$(git tag | grep -Eo '-r[0-9]+$' | sort -V | tail -1 | tr -d '-r' || echo 0)
           new_r_number=$((last_r_number + 1))
       
-          # Generate unique tag
+          # Generate unique tag with correct format
           increment=0
           while true; do
-            # Format: ruTorrentVersion[_increment]-rTorrentVersion-rX
             if [ $increment -eq 0 ]; then
-              base_ru="${ru_version}"
+              # Initial format: 5.2_7.2-r0
+              tag_name="${ru_version}_${rt_version}-r${new_r_number}"
             else
-              base_ru="${ru_version}_${increment}"
+              # Retry format: 5.2_1-7.2-r0
+              tag_name="${ru_version}_${increment}-${rt_version}-r${new_r_number}"
             fi
-            
-            tag_name="${base_ru}-${rt_version}-r${new_r_number}"
-            clean_tag=$(echo "$tag_name" | tr -cd '[:alnum:]_-.' | sed 's/[-_]$//')
       
-            # Check tag existence
+            # Clean and validate
+            clean_tag=$(echo "$tag_name" | tr -cd '[:alnum:]_-' | sed 's/_+/_/g')
+            
+            # Check existence
             if ! git rev-parse "$clean_tag" >/dev/null 2>&1 && \
                ! gh api repos/$GITHUB_REPOSITORY/git/ref/tags/$clean_tag >/dev/null 2>&1; then
               break
@@ -178,26 +179,20 @@ jobs:
       
             echo "Tag $clean_tag exists, incrementing..."
             ((increment++))
-            [ $increment -gt 10 ] && { echo "❌ Too many attempts"; exit 1; }
+            [ $increment -gt 5 ] && { echo "❌ Max attempts reached"; exit 1; }
           done
       
           # Create and push tag
           git tag "$clean_tag"
           git push origin "$clean_tag"
       
-          # Create release with component versions
+          # Create release
           gh release create "$clean_tag" \
             --title "Release $clean_tag" \
             --notes "Component versions:
             - rTorrent: $rt_tag_name
             - ruTorrent: $ru_tag_name"
-            
-                echo "✅ Created release: $clean_tag"
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
-
-
-
-
+      
+          echo "✅ Created release: $clean_tag"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
