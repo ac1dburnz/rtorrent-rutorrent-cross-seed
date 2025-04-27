@@ -189,9 +189,15 @@ jobs:
           gh release create "$clean_tag" \
             --title "Release $clean_tag" \
             --notes "Component versions:
-      - rTorrent: $rt_tag_name
-      - ruTorrent: $ru_tag_name"
-      
-          echo "✅ Created release: $clean_tag"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - rTorrent: $rt_tag_name
+            - ruTorrent: $ru_tag_name"
+            
+                echo "✅ Created release: $clean_tag"
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+
+
+
+
