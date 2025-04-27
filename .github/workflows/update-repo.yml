@@ -68,11 +68,11 @@ jobs:
             --body "Automatic updates from upstream repositories" \
             --base main \
             --head ${{ env.BRANCH_NAME }}
-          
-          gh pr merge \
-            --admin \
-            --merge
-            ${{ env.BRANCH_NAME }}
+      
+          gh pr merge --admin --merge ${{ env.BRANCH_NAME }}
+
+
+            
 
       - name: Create release
         if: steps.check-changes.outputs.changes == 'true'
