@@ -161,7 +161,7 @@ jobs:
           increment=0
           while true; do
             if [ $increment -eq 0 ]; then
-              tag_name="${ru_version}_${rt_version}-r${new_r_number}"
+              tag_name="${ru_version}_${rt_version}-r0"
             else
               tag_name="${ru_version}_${increment}-${rt_version}-r${new_r_number}"
             fi
