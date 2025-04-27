@@ -81,37 +81,48 @@ jobs:
         run: |
           # Get the latest release tag for both rTorrent and ruTorrent
           rt_repo="stickz/rtorrent"
-          rt_release_response=$(curl -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$rt_repo/releases/latest")
+          rt_release_response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$rt_repo/releases/latest")
+          echo "rTorrent release response: $rt_release_response"  # Debugging
           rt_tag_name=$(echo $rt_release_response | jq -r '.tag_name')
-
+      
+          # Check for errors in the response
+          if [[ "$rt_tag_name" == "null" ]]; then
+            echo "Error fetching rTorrent release tag."
+            exit 1
+          fi
+      
           ru_repo="Novik/ruTorrent"
-          ru_release_response=$(curl -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$ru_repo/releases/latest")
+          ru_release_response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$ru_repo/releases/latest")
+          echo "ruTorrent release response: $ru_release_response"  # Debugging
           ru_tag_name=$(echo $ru_release_response | jq -r '.tag_name')
-
+      
+          # Check for errors in the response
+          if [[ "$ru_tag_name" == "null" ]]; then
+            echo "Error fetching ruTorrent release tag."
+            exit 1
+          fi
+      
           # Extract versions from the tag names
           rt_version=$(echo $rt_tag_name | grep -oP '\d+\.\d+')
           ru_version=$(echo $ru_tag_name | grep -oP '\d+\.\d+')
-
+      
           # Determine the release number
           release_num=$(git tag | grep -o 'r[0-9]*$' | sort -n | tail -1 | sed 's/r//' || echo 0)
           new_release_num=$((release_num + 1))
-
+      
           # Construct the tag name
           tag_name="${ru_version}-${rt_version}-r${new_release_num}"
-
+      
           # Check if tag already exists and modify if necessary
           if git tag -l | grep -q "$tag_name"; then
             tag_name="${ru_version}_${rt_version}_r${new_release_num}"
           fi
-
+      
           # Create the tag and push
           git tag $tag_name
           git push origin $tag_name
-
+      
           # Create release with the new tag
           gh release create $tag_name --title "Release $tag_name" --notes "Automatic release for updated components"
-
+      
           echo "Release created with tag: $tag_name"
-
-
-
