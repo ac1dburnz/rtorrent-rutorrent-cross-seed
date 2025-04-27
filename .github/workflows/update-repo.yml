@@ -40,8 +40,7 @@ jobs:
       - name: Check for Dockerfile changes
         id: check-changes
         run: |
-          git diff --exit-code Dockerfile
-          echo "changes=$(git diff --exit-code Dockerfile || echo 'true')" >> $GITHUB_ENV
+          git diff --quiet Dockerfile || echo "changes=true" >> $GITHUB_ENV
 
       - name: Create update branch
         if: env.changes == 'true'
@@ -86,4 +85,5 @@ jobs:
           fi
           git tag $tag_name
           git push origin $tag_name
+
 
