@@ -12,7 +12,7 @@ if token:
     headers["Authorization"] = f"token {token}"
 
 # Always look relative to GITHUB_WORKSPACE
-dockerfile_path = os.path.join(os.getenv("GITHUB_WORKSPACE"), "Dockerfile")
+dockerfile_path = os.path.join, "Dockerfile")
 
 try:
     # Get latest release
