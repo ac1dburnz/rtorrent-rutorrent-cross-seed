@@ -182,7 +182,7 @@ jobs:
           git tag "$clean_tag"
           git push origin "refs/tags/$clean_tag"
           gh release create "$clean_tag" \
-            --title  "Release $clean_tag" \
+            --title  "$clean_tag" \
             --notes  "Component versions:
             - rTorrent: $rt_tag_name
             - ruTorrent: $ru_tag_name"
