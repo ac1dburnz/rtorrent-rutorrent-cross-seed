@@ -11,7 +11,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.TOKEN_SECRET }}
           fetch-depth: 0
 
       - name: Set up Python
@@ -28,13 +28,13 @@ jobs:
       - name: Run rTorrent update
         run: python3 Scripts/rtorrent-auto-update.py
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN_SECRET }}
           BASE_DIR: ${{ github.workspace }}
 
       - name: Run ruTorrent update
         run: python3 Scripts/rutorrent-auto-update.py
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN_SECRET }}
           BASE_DIR: ${{ github.workspace }}
 
       - name: Check for Dockerfile changes
@@ -76,7 +76,7 @@ jobs:
       - name: Create and merge PR
         if: env.changes == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.TOKEN_SECRET }}
           REPO: ${{ github.repository }}
         run: |
           set -euxo pipefail
@@ -113,8 +113,8 @@ jobs:
       - name: Generate release tag and create release
         if: env.changes == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN:   ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN_SECRET }}
+          GH_TOKEN:   ${{ secrets.TOKEN_SECRET }}
         run: |
           set -euxo pipefail
 
