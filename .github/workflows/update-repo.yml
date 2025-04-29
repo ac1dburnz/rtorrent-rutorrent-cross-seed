@@ -133,18 +133,16 @@ jobs:
           ru_version=$(echo "$ru_tag_name" | grep -Eo '[0-9]+\.[0-9]+')
 
           existing_tags=$(git tag)
-
-          # Base tag pattern
           base_tag="${ru_version}-${rt_version}"
           max_r=0
           hotfix=0
-
-          # Detect existing max -rN and _N hotfix suffixes
+        
           while IFS= read -r tag; do
-            tag_base=$(echo "$tag" | sed -E 's/_([0-9]+)-[0-9]+\.[0-9]+-r[0-9]+$/-\1/')
-            base=$(echo "$tag" | grep -Eo "^[0-9]+\.[0-9]+(?:_[0-9]+)?-[0-9]+\.[0-9]+")
-            r=$(echo "$tag" | grep -Eo "-r[0-9]+$" | tr -d '-r')
-            [[ "$base" == "$base_tag"* ]] && (( r > max_r )) && max_r=$r
+            # Normalize tag by removing any 'v', dashes, or underscores
+            if [[ "$tag" =~ ^(${ru_version//./\\.})(_[0-9]+)?[-_](${rt_version//./\\.})(_[0-9]+)?-r([0-9]+)$ ]]; then
+              r="${BASH_REMATCH[5]}"
+              (( r > max_r )) && max_r=$r
+            fi
           done <<< "$existing_tags"
 
           new_r=$((max_r + 1))
