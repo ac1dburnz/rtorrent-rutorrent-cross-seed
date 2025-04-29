@@ -114,67 +114,79 @@ jobs:
         if: env.changes == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN:   ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euxo pipefail
 
+          # Fetch tags and configure git identity
           git fetch --tags --force
           git config --global user.email ${{ secrets.EMAIL }}
-          git config --global user.name ${{ secrets.NAME }}
+          git config --global user.name  ${{ secrets.NAME }}
 
+          # Get latest upstream versions
           rt_repo="stickz/rtorrent"
           rt_tag_name=$(curl -sLH "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/$rt_repo/releases/latest" | jq -r '.tag_name | sub("^v";"")')
+            "https://api.github.com/repos/$rt_repo/releases/latest" \
+            | jq -r '.tag_name | sub("^v";"")')
           ru_repo="Novik/ruTorrent"
           ru_tag_name=$(curl -sLH "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/$ru_repo/releases/latest" | jq -r '.tag_name | sub("^v";"")')
+            "https://api.github.com/repos/$ru_repo/releases/latest" \
+            | jq -r '.tag_name | sub("^v";"")')
 
+          # Simplify to major.minor
           rt_version=$(echo "$rt_tag_name" | grep -Eo '[0-9]+\.[0-9]+' | head -1)
           ru_version=$(echo "$ru_tag_name" | grep -Eo '[0-9]+\.[0-9]+')
 
+          # Gather all existing tags
           existing_tags=$(git tag)
-          base_tag="${ru_version}-${rt_version}"
-          max_r=0
+
+          # Determine if base tag already exists → compute ru_version hotfix (_N)
           hotfix=0
-        
+          max_hotfix=0
+          # 1) Look for tags like 5.2_1-7.2-r0
+          # 2) Also detect plain 5.2-7.2-rX so we know to start hotfix at 1
           while IFS= read -r tag; do
-            # Normalize tag by removing any 'v', dashes, or underscores
-            if [[ "$tag" =~ ^(${ru_version//./\\.})(_[0-9]+)?[-_](${rt_version//./\\.})(_[0-9]+)?-r([0-9]+)$ ]]; then
-              r="${BASH_REMATCH[5]}"
+            if [[ "$tag" =~ ^${ru_version}_([0-9]+)-${rt_version}-r[0-9]+$ ]]; then
+              this=${BASH_REMATCH[1]}
+              (( this > max_hotfix )) && max_hotfix=$this
+            elif [[ "$tag" =~ ^${ru_version}-${rt_version}-r[0-9]+$ ]]; then
+              (( max_hotfix = 0 > max_hotfix ? 0 : max_hotfix ))
+            fi
+          done <<< "$existing_tags"
+
+          if (( max_hotfix > 0 )) || grep -qE "^${ru_version}-${rt_version}-r[0-9]+" <<< "$existing_tags"; then
+            hotfix=$((max_hotfix + 1))
+            ru_version="${ru_version}_${hotfix}"
+          fi
+
+          # Now for this (possibly hotfixed) ru_version, find highest -rN
+          max_r=0
+          while IFS= read -r tag; do
+            if [[ "$tag" =~ ^${ru_version}-${rt_version}-r([0-9]+)$ ]]; then
+              r=${BASH_REMATCH[1]}
               (( r > max_r )) && max_r=$r
             fi
           done <<< "$existing_tags"
 
           new_r=$((max_r + 1))
+          new_tag="${ru_version}-${rt_version}-r${new_r}"
 
-          # Try base first, then hotfix with _N
-          while true; do
-            if [ $hotfix -eq 0 ]; then
-              new_tag="${ru_version}-${rt_version}-r${new_r}"
-            else
-              new_tag="${ru_version}_${hotfix}-${rt_version}-r${new_r}"
-            fi
+          # Sanitize and ensure uniqueness via GitHub API
+          clean_tag=$(echo "$new_tag" | tr -cd '[:alnum:]_.-' | sed 's/[-_]$//')
+          if git rev-parse "$clean_tag" >/dev/null 2>&1 || \
+             gh api repos/${{ github.repository }}/git/ref/tags/$clean_tag >/dev/null 2>&1; then
+            echo "❌ Tag $clean_tag already exists unexpectedly"
+            exit 1
+          fi
 
-            # Clean and validate
-            clean_tag=$(echo "$new_tag" | tr -cd '[:alnum:]_.-' | sed 's/[-_]$//')
-
-            if ! git rev-parse "$clean_tag" >/dev/null 2>&1 && \
-               ! gh api repos/${{ github.repository }}/git/ref/tags/$clean_tag >/dev/null 2>&1; then
-              break
-            fi
-
-            ((hotfix++))
-            [ $hotfix -gt 10 ] && { echo "❌ Max hotfix attempts reached"; exit 1; }
-          done
-
+          # Create tag, push, and publish release
           git tag "$clean_tag"
           git push origin "refs/tags/$clean_tag"
 
           gh release create "$clean_tag" \
-            --title "Release $clean_tag" \
-            --notes "Component versions:
+            --title  "Release $clean_tag" \
+            --notes  "Component versions:
             - rTorrent: $rt_tag_name
             - ruTorrent: $ru_tag_name"
 
           echo "✅ Created release: $clean_tag"
-
