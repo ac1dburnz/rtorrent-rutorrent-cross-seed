@@ -3,7 +3,7 @@ import re
 import os
 import sys
 
-repo = "stickz/rtorrent"
+repo = "rakshasa/rtorrent"
 
 try:
     headers = {}
@@ -43,10 +43,10 @@ try:
         lines = f.readlines()
 
     for i, line in enumerate(lines):
-        if line.startswith("# rTorrent stickz"):
-            lines[i] = f'# rTorrent stickz {version}\n'
-        if line.startswith("ARG RTORRENT_STICKZ_VERSION="):
-            lines[i] = f'ARG RTORRENT_STICKZ_VERSION={latest_sha}\n'
+        if line.startswith("# rTorrent "):
+            lines[i] = f'# rTorrent {version}\n'
+        if line.startswith("ARG RTORRENT_VERSION="):
+            lines[i] = f'ARG RTORRENT_VERSION={latest_sha}\n'
 
     with open(dockerfile_path, "w") as f:
         f.writelines(lines)
